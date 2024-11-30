@@ -5,15 +5,17 @@ pub struct Record {
     pub filename: Option<String>,
     pub filesize: Option<usize>,
     pub lastmod: Option<u64>,
-    pub vercode: Option<String>,
-    pub verstr: Option<String>,
+    pub verlog: Option<u32>,
+    pub ver: Option<String>,
+    pub verraw: [u8; 8],
     pub versave: Option<f32>,
     pub versave2: Option<u32>,
+    pub verscenario: Option<f32>,
     pub include_ai: Option<bool>,
     pub speed: Option<u32>,
     pub recorder: Option<u16>,
     pub totalplayers: Option<u8>,
-    pub mapsize: Option<i32>,
+    pub mapsize: Option<u32>,
     pub revealmap: Option<i32>,
     pub mapx: Option<i32>,
     pub mapy: Option<i32>,
@@ -33,10 +35,10 @@ pub struct Record {
     pub instructions: Option<Vec<u8>>,
     pub duration: u32,
     pub chat: Vec<Chat>,
-    pub mapid: Option<i32>,
+    pub mapid: Option<u32>,
     pub difficultyid: Option<i32>,
     pub lockteams: Option<bool>,
-    pub poplimit: Option<i32>,
+    pub poplimit: Option<u32>,
     pub gametype: Option<u8>,
     pub lockdiplomacy: Option<bool>,
     pub players: [Player; 9],
@@ -55,6 +57,11 @@ pub struct Player {
     pub inity: Option<f32>,
     pub civid: Option<u8>,
     pub colorid: Option<u8>,
+    pub disconnected: Option<bool>,
+    pub resigned: Option<u32>,
+    pub feudaltime: Option<u32>,
+    pub castletime: Option<u32>,
+    pub imperialtime: Option<u32>,
 }
 
 impl Player {
@@ -70,6 +77,11 @@ impl Player {
             inity: None,
             civid: None,
             colorid: None,
+            disconnected: None,
+            resigned: None,
+            feudaltime: None,
+            castletime: None,
+            imperialtime: None,
         }
     }
 
@@ -89,8 +101,8 @@ pub struct Chat {
 pub struct DebugInfo {
     pub currentpos_header: usize,
     pub currentpos_body: usize,
-    pub headerstart: u32,
-    pub headerend: u32,
+    pub rawheader_begin: u32,
+    pub rawheader_end: u32,
     pub nextpos: u32,
     pub headerlen: usize,
     pub aipos: usize,
@@ -105,6 +117,8 @@ pub struct DebugInfo {
     pub lobbypos: usize,
     pub playerinitpos_by_idx: [Option<usize>; 9],
     pub earlymovecount: usize,
+    pub earlymovecmd: Vec<u8>,
+    pub earlymovetime: Vec<u32>,
 }
 
 impl Record {
@@ -113,10 +127,12 @@ impl Record {
             filename: None,
             filesize: None,
             lastmod: None,
-            vercode: None,
-            verstr: None,
+            verlog: None,
+            ver: None,
+            verraw: [b'\0'; 8],
             versave: None,
             versave2: None,
+            verscenario: None,
             include_ai: None,
             speed: None,
             recorder: None,
@@ -161,8 +177,8 @@ impl Record {
             debug: DebugInfo {
                 currentpos_header: 0,
                 currentpos_body: 0,
-                headerstart: 0,
-                headerend: 0,
+                rawheader_begin: 0,
+                rawheader_end: 0,
                 nextpos: 0,
                 headerlen: 0,
                 aipos: 0,
@@ -177,6 +193,8 @@ impl Record {
                 lobbypos: 0,
                 playerinitpos_by_idx: [None, None, None, None, None, None, None, None, None],
                 earlymovecount: 0,
+                earlymovecmd: Vec::new(),
+                earlymovetime: Vec::new(),
             },
         }
     }

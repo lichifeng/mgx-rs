@@ -1,4 +1,4 @@
-use mgx::parser::parse;
+use mgx::parser_raw::parse;
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;

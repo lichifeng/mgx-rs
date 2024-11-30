@@ -114,6 +114,16 @@ impl StreamCursor {
         result
     }
 
+    pub fn get_i8(&mut self) -> Option<i8> {
+        if self.current().is_empty() {
+            return None;
+        } else {
+            let result = self.src[self.pos_in_data + self.offset] as i8;
+            self.pos_in_data += 1;
+            return Some(result);
+        }
+    }
+
     pub fn peek_u16(&self) -> Option<u16> {
         if self.current().len() < 2 {
             return None;
@@ -133,6 +143,20 @@ impl StreamCursor {
             self.pos_in_data += 2;
         }
         result
+    }
+
+    pub fn get_i16(&mut self) -> Option<i16> {
+        if self.current().len() < 2 {
+            return None;
+        } else {
+            let result = i16::from_le_bytes(
+                self.src[self.pos_in_data + self.offset..self.pos_in_data + 2 + self.offset]
+                    .try_into()
+                    .expect("Failed to read i16"),
+            );
+            self.pos_in_data += 2;
+            return Some(result);
+        }
     }
 
     pub fn get_i32(&mut self) -> Option<i32> {
@@ -218,53 +242,6 @@ impl StreamCursor {
         }
         self.pos_in_data += bytes as usize;
         Some(result)
-    }
-
-    pub fn get_cstring(&mut self, len: Option<usize>) -> Option<String> {
-        if len.is_some_and(|l| l <= self.remain()) {
-            let raw_bytes = if self.current()[len.unwrap() - 1] == 0 {
-                &self.current()[0..len.unwrap() - 1]
-            } else {
-                &self.current()[0..len.unwrap()]
-            };
-            let encoding = chardet::detect(raw_bytes).0;
-            println!("encoding: {}", encoding);
-            let s = match encoding.as_str() {
-                "UTF-8" => {
-                    let s = String::from_utf8_lossy(raw_bytes).to_string();
-                    s
-                }
-                _ => {
-                    let (cow, _, _) = encoding_rs::Encoding::for_label(encoding.as_bytes())
-                        .unwrap_or(encoding_rs::UTF_8)
-                        .decode(raw_bytes);
-                    cow.to_string()
-                }
-            };
-            self.mov(len.unwrap() as isize);
-            return Some(s);
-        }
-
-        let end = self.remain();
-        for i in 0..end {
-            if self.current()[i] == 0 {
-                let raw_bytes = &self.current()[0..i];
-                let encoding = chardet::detect(raw_bytes).0;
-                println!("encoding: {}", encoding);
-                let s = match encoding.as_str() {
-                    "UTF-8" => String::from_utf8_lossy(raw_bytes).to_string(),
-                    _ => {
-                        let (cow, _, _) = encoding_rs::Encoding::for_label(encoding.as_bytes())
-                            .unwrap_or(encoding_rs::UTF_8)
-                            .decode(raw_bytes);
-                        cow.to_string()
-                    }
-                };
-                self.pos_in_data = i + 1;
-                return Some(s);
-            }
-        }
-        None
     }
 
     pub fn extract_str_l32(&mut self) -> Option<Vec<u8>> {

@@ -1,12 +1,11 @@
 use crate::cursor::StreamCursor;
-use crate::drawmap::draw_map;
 use crate::record::{Chat, Record};
 use flate2::read::ZlibDecoder;
 use flate2::Decompress;
 use std::io::Read;
-use std::ops::Index;
-use std::process::abort;
 
+/// Parse MGX file
+/// The result is not emblished, i.e. Civilization is in raw id, not in string, etc.
 pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, String), (Record, String)> {
     let mut r = Record::new();
 
@@ -14,32 +13,78 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
     r.filesize = Some(buffer.len());
     r.lastmod = Some(lastmod);
 
-    r.debug.headerend = u32::from_le_bytes(buffer[0..4].try_into().expect("Invalid length"));
-    r.debug.nextpos = u32::from_le_bytes(buffer[4..8].try_into().expect("Invalid length"));
-    r.debug.headerstart = if r.debug.nextpos < buffer.len() as u32 {
-        8
+    r.debug.rawheader_end = u32::from_le_bytes(buffer[0..4].try_into().unwrap());
+    r.debug.nextpos = u32::from_le_bytes(buffer[4..8].try_into().unwrap());
+    if r.debug.nextpos < buffer.len() as u32 {
+        r.debug.rawheader_begin = 8;
     } else {
-        r.vercode = Some("aok".to_string());
-        4
+        r.ver = Some("aok".to_string());
+        r.debug.rawheader_begin = 4;
     };
 
     let mut header_buffer = Vec::new();
-    let rawheader = &buffer[r.debug.headerstart as usize..];
+    let rawheader = &buffer[r.debug.rawheader_begin as usize..];
     let mut decompressor = ZlibDecoder::new_with_decompress(rawheader, Decompress::new(false));
-    decompressor.read_to_end(&mut header_buffer).expect("Unable to decompress header data");
+    match decompressor.read_to_end(&mut header_buffer) {
+        Ok(_) => {}
+        Err(e) => return Err((r, format!("Failed to decompress header: {}", e))),
+    }
     r.debug.headerlen = header_buffer.len();
 
     let mut h = StreamCursor::new(header_buffer, 0); // header cursor
-    let mut b = StreamCursor::new(buffer, r.debug.headerend as usize); // body cursor
+    let mut b = StreamCursor::new(buffer, r.debug.rawheader_end as usize); // body cursor
 
     // TODO: Detect version
     // https://github.com/lichifeng/MgxParser/blob/master/src/analyzers/default/subproc_detectversion.cc
-    r.verstr = h.get_cstring(Some(8));
+    r.verraw = h.current()[0..8].try_into().expect("Failed to read verstr");
+    h.mov(8);
     r.versave = h.get_f32();
     if -1.0 == r.versave.unwrap() {
         // TODO: need test
         r.versave2 = h.get_u32();
     }
+    r.verlog = b.peek_u32();
+    match &r.verraw {
+        b"TRL 9.3\0" => {
+            if r.ver.as_deref() == Some("aok") {
+                r.ver = Some("aoktrial".to_string());
+            } else {
+                r.ver = Some("aoctrial".to_string());
+            }
+        }
+        b"VER 9.3\0" => r.ver = Some("aok".to_string()),
+        b"VER 9.4\0" => {
+            if r.verlog.unwrap() == 0 || r.verlog.unwrap() == 3 {
+                r.ver = Some("aoc10".to_string());
+            } else if r.verlog.unwrap() == 5 || r.versave.unwrap() >= 12.9699 {
+                r.ver = Some("de".to_string());
+            } else if r.versave.unwrap() >= 12.4999 {
+                r.ver = Some("hd50_6".to_string());
+            } else if r.versave.unwrap() >= 12.4899 {
+                r.ver = Some("hd48".to_string());
+            } else if r.versave.unwrap() >= 12.3599 {
+                r.ver = Some("hd46_7".to_string());
+            } else if r.versave.unwrap() >= 12.3399 {
+                r.ver = Some("hd43".to_string());
+            } else if r.versave.unwrap() > 11.7601 {
+                r.ver = Some("hd".to_string());
+            } else if r.verlog.unwrap() == 4 {
+                r.ver = Some("aoc10c".to_string());
+            } else {
+                r.ver = Some("aoc".to_string());
+            }
+        }
+        b"VER 9.5\0" => r.ver = Some("aofe21".to_string()),
+        b"VER 9.8\0" => r.ver = Some("userpatch12".to_string()),
+        b"VER 9.9\0" => r.ver = Some("userpatch13".to_string()),
+        b"VER 9.A\0" => r.ver = Some("userpatch14rc1".to_string()),
+        b"VER 9.B\0" => r.ver = Some("userpatch14rc2".to_string()),
+        b"VER 9.C\0" | b"VER 9.D\0" => r.ver = Some("userpatch14".to_string()),
+        b"VER 9.E\0" | b"VER 9.F\0" => r.ver = Some("userpatch15".to_string()),
+        b"MCP 9.F\0" => r.ver = Some("mcp".to_string()),
+        _ => {}
+    }
+
     r.debug.aipos = h.tell();
     r.include_ai = h.get_bool(4);
 
@@ -138,12 +183,15 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
     r.time2win = h.get_i32();
 
     // Find scenario pos
-    let needle = match r.vercode.as_deref() {
+    let needle = match r.ver.as_deref() {
         Some("aok") => vec![0x9a, 0x99, 0x99, 0x3f], // float 1.20
         _ => vec![0xf6, 0x28, 0x9c, 0x3f],           // float 1.22
     };
     match h.rfind(&needle, 0..r.debug.victorypos) {
-        Some(pos) => r.debug.scenariopos = pos - 4,
+        Some(pos) => {
+            r.debug.scenariopos = pos - 4;
+            r.verscenario = h.get_f32();
+        }
         None => return Err((r, "can't find scenario pos".to_string())),
     };
 
@@ -151,7 +199,7 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
     h.seek(r.debug.scenariopos + 4433);
     r.scenariofilename = h.extract_str_l16();
     h.mov(4 * 5);
-    if r.vercode.as_deref() != Some("aok") {
+    if r.ver.as_deref() != Some("aok") {
         h.mov(4);
     }
     r.instructions = h.extract_str_l16();
@@ -206,7 +254,7 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
 
     h.seek(r.debug.settingspos);
     h.mov(64 + 4 + 8);
-    r.mapid = h.get_i32();
+    r.mapid = h.get_u32();
     r.difficultyid = h.get_i32();
     r.lockteams = h.get_bool(4);
     let mut init_search_needles = Vec::new();
@@ -280,21 +328,17 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
     }
     r.revealmap = h.get_i32();
     h.mov(4); // fog of war
-    r.mapsize = h.get_i32();
-    r.poplimit = h.get_i32();
+    r.mapsize = h.get_u32();
+    r.poplimit = h.get_u32();
     if r.poplimit.unwrap() < 40 {
         r.poplimit = r.poplimit.map(|pop| pop * 25);
     }
     r.gametype = h.get_u8();
     r.lockdiplomacy = h.get_bool(1);
-    if !r.vercode.as_ref().is_some_and(|v| v == "aok") {
+    if !r.ver.as_ref().is_some_and(|v| v == "aok") {
         let totalchats = h.get_i32().unwrap();
         for _ in 0..totalchats {
-            r.chat.push(Chat { 
-                time: None,
-                player: None,
-                message: h.extract_str_l32(),
-             });
+            r.chat.push(Chat { time: None, player: None, message: h.extract_str_l32() });
         }
     }
 
@@ -318,7 +362,7 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
             r.players[i].initx = h.get_f32();
             r.players[i].inity = h.get_f32();
 
-            if r.vercode.as_deref() != Some("aok") {
+            if r.ver.as_deref() != Some("aok") {
                 let num_savedviews = h.get_i32().unwrap();
                 if num_savedviews > 0 {
                     h.mov(num_savedviews as isize * 8);
@@ -377,10 +421,42 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
                 let cmd = b.get_u8().unwrap();
                 match cmd {
                     COMMAND_RESIGN => {
-                        // Handle resign command
+                        let slot = b.get_i8().unwrap();
+                        if slot >= 0 && slot < 9 && r.players[slot as usize].isvalid() {
+                            r.players[slot as usize].resigned = Some(r.duration);
+                            r.players[slot as usize].disconnected = b.get_bool(4);
+                        }
                     }
                     COMMAND_RESEARCH => {
-                        // Handle research command
+                        b.mov(7);
+                        let slot = b.get_i8().unwrap();
+                        if slot < 0 || slot > 8 || !r.players[slot as usize].isvalid() {
+                            break;
+                        }
+                        b.mov(1);
+                        let techid = b.get_i16().unwrap();
+                        match techid {
+                            101 => r.players[slot as usize].feudaltime = Some(r.duration + 130000),
+                            102 => {
+                                r.players[slot as usize].castletime = Some(
+                                    r.duration
+                                        + match r.players[slot as usize].civid {
+                                            Some(8) => 160000 / 1.10 as u32,
+                                            _ => 160000,
+                                        },
+                                )
+                            }
+                            103 => {
+                                r.players[slot as usize].imperialtime = Some(
+                                    r.duration
+                                        + match r.players[slot as usize].civid {
+                                            Some(8) => 190000 / 1.10 as u32,
+                                            _ => 190000,
+                                        },
+                                )
+                            }
+                            _ => {}
+                        }
                     }
                     COMMAND_TRAIN => {
                         // Handle train command
@@ -398,7 +474,12 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
                         // Handle postgame command
                     }
                     COMMAND_MOVE => {
-                        // Handle move command
+                        const EARLYMOVE_THRESHOLD: usize = 5;
+                        if r.debug.earlymovecount < EARLYMOVE_THRESHOLD {
+                            r.debug.earlymovecmd.push(b.current()[0]);
+                            r.debug.earlymovetime.push(r.duration);
+                            r.debug.earlymovecount += 1;
+                        }
                     }
                     COMMAND_SAVE => {
                         // Handle save command
@@ -440,6 +521,7 @@ pub fn parse(buffer: Vec<u8>, filename: &str, lastmod: u64) -> Result<(Record, S
             _ => {}
         }
     }
+
     // draw_map(&h, &r, "test.png");
     Ok((r, "".to_string()))
 }
