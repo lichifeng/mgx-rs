@@ -1,7 +1,5 @@
 use boyer_moore_magiclen::BMByte;
 use boyer_moore_magiclen::BMByteSearchable;
-use chardet;
-use encoding_rs;
 use std::ops::Range;
 use std::slice::Iter;
 
@@ -59,6 +57,7 @@ impl StreamCursor {
         self
     }
 
+    /// Start from offset. Real data.
     pub fn data(&self) -> &[u8] {
         &self.src[self.offset..]
     }
@@ -220,17 +219,6 @@ impl StreamCursor {
         result
     }
 
-    pub fn peek_f64(&self) -> Option<f64> {
-        if self.current().len() < 8 {
-            return None;
-        } else {
-            let result = f64::from_le_bytes(
-                self.data()[self.pos_in_data..self.pos_in_data + 8].try_into().expect("Failed to read f64"),
-            );
-            return Some(result);
-        }
-    }
-
     pub fn get_bool(&mut self, bytes: u8) -> Option<bool> {
         // if next byets bytes are all 0, return false, otherwise true
         let mut result = false;
@@ -272,5 +260,17 @@ impl StreamCursor {
         };
         self.mov(str_len as isize);
         Some(raw_str)
+    }
+
+    #[cfg(debug_assertions)]
+    #[allow(dead_code)]
+    pub fn print_hex(&self, len: usize) {
+        let mut i = 0;
+        println!("{} bytes from {}:", len, self.pos_in_data);
+        while i < len {
+            print!("{:02x} ", self.data()[self.pos_in_data + i]);
+            i += 1;
+        }
+        println!();
     }
 }

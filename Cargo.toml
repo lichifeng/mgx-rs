@@ -5,10 +5,7 @@ edition = "2021"
 
 [dependencies]
 boyer-moore-magiclen = "0.2.20"
-chardet = "0.2.4"
 chksum-hash-md5 = "0.0.1"
-encoding = "0.2.33"
-encoding_rs = "0.8.35"
 flate2 = "1.0"
 image = "0.25.4"
 imageproc = "0.25.0"

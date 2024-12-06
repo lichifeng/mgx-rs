@@ -2,12 +2,13 @@ use std::fmt::Debug;
 
 #[derive(Debug)]
 pub struct Record {
-    pub filename: Option<String>,
-    pub filesize: Option<usize>,
-    pub lastmod: Option<u64>,
+    pub filename: String,
+    pub filesize: usize,
+    pub lastmod: u64,
     pub verlog: Option<u32>,
-    pub ver: Option<String>,
+    pub ver: Option<Version>,
     pub verraw: [u8; 8],
+    /// `11.76` for aoc10a/c
     pub versave: Option<f32>,
     pub versave2: Option<u32>,
     pub verscenario: Option<f32>,
@@ -42,6 +43,7 @@ pub struct Record {
     pub gametype: Option<u8>,
     pub lockdiplomacy: Option<bool>,
     pub players: [Player; 9],
+    /// Debug data used by the parser. Strip this out in output json.
     pub debug: DebugInfo,
 }
 
@@ -62,6 +64,15 @@ pub struct Player {
     pub feudaltime: Option<u32>,
     pub castletime: Option<u32>,
     pub imperialtime: Option<u32>,
+    pub initage: Option<f32>,
+    pub initfood: Option<f32>,
+    pub initwood: Option<f32>,
+    pub initstone: Option<f32>,
+    pub initgold: Option<f32>,
+    pub initpop: Option<f32>,
+    pub initcivilian: Option<f32>,
+    pub initmilitary: Option<f32>,
+    pub modversion: Option<f32>,
 }
 
 impl Player {
@@ -82,6 +93,15 @@ impl Player {
             feudaltime: None,
             castletime: None,
             imperialtime: None,
+            initage: None,
+            initfood: None,
+            initwood: None,
+            initstone: None,
+            initgold: None,
+            initpop: None,
+            initcivilian: None,
+            initmilitary: None,
+            modversion: None,
         }
     }
 
@@ -106,6 +126,7 @@ pub struct DebugInfo {
     pub nextpos: u32,
     pub headerlen: usize,
     pub aipos: usize,
+    /// Data used to generate map
     pub mappos: usize,
     pub initpos: usize,
     pub triggerpos: usize,
@@ -114,19 +135,39 @@ pub struct DebugInfo {
     pub disabledtechspos: usize,
     pub victorypos: usize,
     pub scenariopos: usize,
-    pub lobbypos: usize,
     pub playerinitpos_by_idx: [Option<usize>; 9],
     pub earlymovecount: usize,
     pub earlymovecmd: Vec<u8>,
     pub earlymovetime: Vec<u32>,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum Version {
+    AoKTrial,
+    AoK,
+    AoCTrial,
+    AoC,
+    AoC10a,
+    AoC10c,
+    UP12,
+    UP13,
+    UP14,
+    UP14RC1,
+    UP14RC2,
+    UP15,
+    AoFE21,
+    HD,
+    DE,
+    MCP,
+    Unknown
+}
+
 impl Record {
-    pub fn new() -> Self {
+    pub fn new(filename: String, filesize: usize, lastmod: u64) -> Self {
         Record {
-            filename: None,
-            filesize: None,
-            lastmod: None,
+            filename,
+            filesize,
+            lastmod,
             verlog: None,
             ver: None,
             verraw: [b'\0'; 8],
@@ -190,7 +231,6 @@ impl Record {
                 disabledtechspos: 0,
                 victorypos: 0,
                 scenariopos: 0,
-                lobbypos: 0,
                 playerinitpos_by_idx: [None, None, None, None, None, None, None, None, None],
                 earlymovecount: 0,
                 earlymovecmd: Vec::new(),

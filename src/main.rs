@@ -7,7 +7,7 @@ use std::time::{Instant, UNIX_EPOCH};
 fn main() {
     let start_time = Instant::now();
 
-    let path = Path::new("../aoc10a4v4.mgx");
+    let path = Path::new("28083e6497dc1a0a3f8ca3a54c2622c2.mgx");
 
     // Read file into memory as binary data
     let mut file = File::open(&path).expect("Unable to open file");
