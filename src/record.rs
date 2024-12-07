@@ -121,13 +121,7 @@ pub struct Chat {
 pub struct DebugInfo {
     pub currentpos_header: usize,
     pub currentpos_body: usize,
-    pub rawheader_begin: u32,
-    pub rawheader_end: u32,
-    pub nextpos: u32,
-    pub headerlen: usize,
     pub aipos: usize,
-    /// Data used to generate map
-    pub mappos: usize,
     pub initpos: usize,
     pub triggerpos: usize,
     pub triggersign: f64,
@@ -218,12 +212,7 @@ impl Record {
             debug: DebugInfo {
                 currentpos_header: 0,
                 currentpos_body: 0,
-                rawheader_begin: 0,
-                rawheader_end: 0,
-                nextpos: 0,
-                headerlen: 0,
                 aipos: 0,
-                mappos: 0,
                 initpos: 0,
                 triggerpos: 0,
                 triggersign: 1.6, // Other values in higher versions

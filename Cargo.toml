@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.94"
 boyer-moore-magiclen = "0.2.20"
 chksum-hash-md5 = "0.0.1"
 flate2 = "1.0"
