@@ -1,13 +1,25 @@
+use serde::Serialize;
 use std::fmt::Debug;
 
-#[derive(Debug)]
+/// Get value from Option<T> if it's Some and bail if it's None
+#[macro_export]
+macro_rules! val {
+    ($x:expr) => {
+        match $x {
+            Some(x) => x,
+            None => bail!("{:?} is None", stringify!($x)),
+        }
+    };
+}
+
+#[derive(Debug, Serialize)]
 pub struct Record {
     pub filename: String,
     pub filesize: usize,
     pub lastmod: u64,
     pub verlog: Option<u32>,
     pub ver: Option<Version>,
-    pub verraw: [u8; 8],
+    pub verraw: Option<String>,
     /// `11.76` for aoc10a/c
     pub versave: Option<f32>,
     pub versave2: Option<u32>,
@@ -32,8 +44,12 @@ pub struct Record {
     pub victorymode: Option<i32>,
     pub score2win: Option<i32>,
     pub time2win: Option<i32>,
-    pub scenariofilename: Option<Vec<u8>>,
-    pub instructions: Option<Vec<u8>>,
+    #[serde(skip)]
+    pub scenariofilename_raw: Option<Vec<u8>>,
+    pub scenariofilename: Option<String>,
+    #[serde(skip)]
+    pub instructions_raw: Option<Vec<u8>>,
+    pub instructions: Option<String>,
     pub duration: u32,
     pub chat: Vec<Chat>,
     pub mapid: Option<u32>,
@@ -44,15 +60,18 @@ pub struct Record {
     pub lockdiplomacy: Option<bool>,
     pub players: [Player; 9],
     /// Debug data used by the parser. Strip this out in output json.
+    #[serde(skip)]
     pub debug: DebugInfo,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Player {
     pub slot: usize,
     pub index: Option<i32>,
     pub playertype: Option<i32>,
-    pub name: Option<Vec<u8>>,
+    #[serde(skip)]
+    pub name_raw: Option<Vec<u8>>,
+    pub name: Option<String>,
     pub teamid: Option<u8>,
     pub ismainop: Option<bool>,
     pub initx: Option<f32>,
@@ -81,6 +100,7 @@ impl Player {
             slot,
             index: None,
             playertype: None,
+            name_raw: None,
             name: None,
             teamid: None,
             ismainop: None,
@@ -110,11 +130,14 @@ impl Player {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Chat {
     pub time: Option<u32>,
+    /// Not implemented yet
     pub player: Option<u8>,
-    pub message: Option<Vec<u8>>,
+    #[serde(skip)]
+    pub content_raw: Option<Vec<u8>>,
+    pub content: Option<String>,
 }
 
 #[derive(Debug)]
@@ -135,7 +158,7 @@ pub struct DebugInfo {
     pub earlymovetime: Vec<u32>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum Version {
     AoKTrial,
     AoK,
@@ -153,7 +176,7 @@ pub enum Version {
     HD,
     DE,
     MCP,
-    Unknown
+    Unknown,
 }
 
 impl Record {
@@ -164,7 +187,7 @@ impl Record {
             lastmod,
             verlog: None,
             ver: None,
-            verraw: [b'\0'; 8],
+            verraw: None,
             versave: None,
             versave2: None,
             verscenario: None,
@@ -188,7 +211,9 @@ impl Record {
             victorymode: None,
             score2win: None,
             time2win: None,
+            scenariofilename_raw: None,
             scenariofilename: None,
+            instructions_raw: None,
             instructions: None,
             duration: 0,
             chat: Vec::new(),

@@ -82,16 +82,20 @@ impl StreamCursor {
     }
 
     pub fn find(&self, needle: Vec<u8>, range: Range<usize>) -> Option<usize> {
-        let bmb = BMByte::from(&needle).unwrap();
-        let slice = SearchableU8::from(&self.src[range.start + self.offset..range.end + self.offset]);
-        bmb.find_first_in(slice).map(|pos| pos + range.start)
+        if let Some(bmb) = BMByte::from(&needle) {
+            let slice = SearchableU8::from(&self.src[range.start + self.offset..range.end + self.offset]);
+            return bmb.find_first_in(slice).map(|pos| pos + range.start);
+        }
+        None
     }
 
     /// __range__ is the range in the data stream
     pub fn rfind(&self, needle: &Vec<u8>, range: Range<usize>) -> Option<usize> {
-        let bmb = BMByte::from(needle).unwrap();
-        let slice = SearchableU8::from(&self.src[range.start + self.offset..range.end + self.offset]);
-        bmb.rfind_first_in(slice).map(|pos| pos + range.start)
+        if let Some(bmb) = BMByte::from(needle) {
+            let slice = SearchableU8::from(&self.src[range.start + self.offset..range.end + self.offset]);
+            return bmb.rfind_first_in(slice).map(|pos| pos + range.start);
+        }
+        None
     }
 }
 
