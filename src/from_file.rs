@@ -1,5 +1,5 @@
-use crate::parser::Parser;
-use crate::record::Record;
+use crate::Parser;
+use crate::Record;
 use anyhow::Result;
 use std::fs::{self, File};
 use std::io::Read;

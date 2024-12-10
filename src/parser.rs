@@ -1,5 +1,7 @@
 use crate::cursor::StreamCursor;
-use crate::record::{Chat, Record, Version};
+use crate::guess_winner::guess;
+use crate::guid::calc_guid;
+use crate::record::*;
 use crate::val;
 use anyhow::{bail, Ok, Result};
 use flate2::read::ZlibDecoder;
@@ -9,8 +11,6 @@ use std::io::Read;
 pub struct Parser {
     pub header: StreamCursor,
     pub body: StreamCursor,
-    /// (mapdata offset in header, mapx, mapy)
-    pub mapattr: (Option<usize>, Option<i32>, Option<i32>),
 }
 
 impl Parser {
@@ -26,7 +26,7 @@ impl Parser {
         let header = StreamCursor::new(header_buffer, 0); // header cursor
         let body = StreamCursor::new(b, rawheader_end as usize); // body cursor
 
-        Ok(Parser { header, body, mapattr: (None, None, None) })
+        Ok(Parser { header, body })
     }
 
     pub fn dump_header(&self, filename: &str) -> Result<()> {
@@ -121,7 +121,7 @@ impl Parser {
 
         // https://github.com/goto-bus-stop/recanalyst/blob/master/src/Analyzers/HeaderAnalyzer.php#L68
         h.mov(12);
-        r.speed = h.get_u32();
+        r.speed_raw = h.get_u32();
         h.mov(29);
         r.recorder = h.get_u16();
         r.totalplayers = h.get_u8();
@@ -141,8 +141,6 @@ impl Parser {
         } else if val!(r.mapx) != val!(r.mapy) {
             bail!("Map is not square");
         }
-        self.mapattr.1 = r.mapx;
-        self.mapattr.2 = r.mapy;
 
         let num_mapzones = val!(h.get_i32());
         let map_bits: isize = (val!(r.mapx) * val!(r.mapy)) as isize;
@@ -154,7 +152,7 @@ impl Parser {
         r.nofog = h.get_bool(1);
         h.mov(1);
 
-        self.mapattr.0 = Some(h.tell());
+        r.debug.mappos = Some(h.tell());
 
         let maptile_type: isize = if val!(h.peek_u8()) == 255 { 4 } else { 2 };
         h.mov(map_bits * maptile_type);
@@ -226,19 +224,23 @@ impl Parser {
             r.players[i].teamid = h.get_u8();
         }
         h.mov(1);
-        r.revealmap = h.get_i32();
+        r.revealmap_raw = h.get_i32();
         h.mov(4); // fog of war
-        r.mapsize = h.get_u32();
+        r.mapsize_raw = h.get_u32();
         r.poplimit = h.get_u32();
         if val!(r.poplimit) < 40 {
             r.poplimit = r.poplimit.map(|pop| pop * 25);
         }
         if r.ver != Some(Version::AoK) {
-            r.gametype = h.get_u8();
+            r.gametype_raw = h.get_u8();
             r.lockdiplomacy = h.get_bool(1);
 
             let totalchats = val!(h.get_i32());
             for _ in 0..totalchats {
+                if h.peek_i32() == Some(0) {
+                    h.mov(4);
+                    continue;
+                }
                 r.chat.push(Chat { time: None, player: None, content_raw: h.extract_str_l32(), content: None });
             }
         }
@@ -266,9 +268,9 @@ impl Parser {
         r.explored2win = h.get_i32();
         h.mov(4);
         r.anyorall = h.get_bool(4);
-        r.victorymode = h.get_i32();
+        r.victorytype_raw = h.get_i32();
         r.score2win = h.get_i32();
-        r.time2win = h.get_i32();
+        r.time2win_raw = h.get_i32();
 
         // Find scenario pos
         let needle = match r.ver {
@@ -304,7 +306,7 @@ impl Parser {
         if r.ver != Some(Version::AoK) {
             r.mapid = h.get_u32();
         }
-        r.difficultyid = h.get_i32();
+        r.difficulty_raw = h.get_i32();
         r.lockteams = h.get_bool(4);
         let mut init_search_needles = Vec::new();
         for i in 0..9 {
@@ -372,7 +374,7 @@ impl Parser {
                 r.players[i].initstone = h.get_f32();
                 r.players[i].initgold = h.get_f32();
                 h.mov(8);
-                r.players[i].initage = h.get_f32();
+                r.players[i].initage_raw = h.get_f32();
                 h.mov(4 * 4);
                 r.players[i].initpop = h.get_f32();
                 h.mov(4 * 25);
@@ -399,7 +401,7 @@ impl Parser {
                 }
 
                 h.mov(5);
-                r.players[i].civid = h.get_u8();
+                r.players[i].civ_raw = h.get_u8();
                 h.mov(3);
                 r.players[i].colorid = h.get_u8();
             }
@@ -465,7 +467,7 @@ impl Parser {
                                 102 => {
                                     r.players[slot as usize].castletime = Some(
                                         r.duration
-                                            + match val!(r.players[slot as usize].civid) {
+                                            + match val!(r.players[slot as usize].civ_raw) {
                                                 8 => 160000 / 1.10 as u32,
                                                 _ => 160000,
                                             },
@@ -474,7 +476,7 @@ impl Parser {
                                 103 => {
                                     r.players[slot as usize].imperialtime = Some(
                                         r.duration
-                                            + match val!(r.players[slot as usize].civid) {
+                                            + match val!(r.players[slot as usize].civ_raw) {
                                                 8 => 190000 / 1.10 as u32,
                                                 _ => 190000,
                                             },
@@ -500,8 +502,9 @@ impl Parser {
                         }
                         COMMAND_MOVE => {
                             const EARLYMOVE_THRESHOLD: usize = 5;
-                            if r.debug.earlymovecount < EARLYMOVE_THRESHOLD {
-                                r.debug.earlymovecmd.push(b.current()[0]);
+                            const MOVE_CMD_SIZE: usize = 19;
+                            if r.debug.earlymovecount < EARLYMOVE_THRESHOLD && b.remain() >= MOVE_CMD_SIZE {
+                                r.debug.earlymovecmd.push(b.current()[..MOVE_CMD_SIZE].try_into()?);
                                 r.debug.earlymovetime.push(r.duration);
                                 r.debug.earlymovecount += 1;
                             }
@@ -549,6 +552,10 @@ impl Parser {
                 _ => {}
             }
         }
+
+        r.guid = Some(calc_guid(r)?);
+        guess(r)?;
+
         Ok(self)
     }
 }

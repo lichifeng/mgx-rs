@@ -1,7 +1,13 @@
 mod cursor;
-mod drawmap;
+mod draw_map;
+pub use draw_map::draw_map;
+pub mod from_file;
 mod mapcolors;
 pub mod parser;
+pub use parser::Parser;
 pub mod record;
-pub mod from_file;
+pub use record::*;
 pub mod render;
+mod translations;
+mod guid;
+mod guess_winner;
