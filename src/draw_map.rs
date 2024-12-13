@@ -5,7 +5,7 @@ use anyhow::{bail, Result};
 use image::Rgb;
 use imageproc::drawing::draw_filled_circle_mut;
 
-/// Generate minimap from map data. Save it to `__savename__.png`.   
+/// Generate minimap from map data. Save it to `savename.png` 
 pub fn draw_map(rec: &Record, parser: &Parser, savename: &str) -> Result<()> {
     let offset = match rec.debug.mappos {
         Some(pos) => pos,
@@ -59,7 +59,7 @@ pub fn draw_map(rec: &Record, parser: &Parser, savename: &str) -> Result<()> {
             let rgb = image::Rgb([color[0] as u8, color[1] as u8, color[2] as u8]);
 
             // 绘制小圆 (不透明)
-            let radius_small = 5;
+            let radius_small = 4;
             draw_filled_circle_mut(&mut img, (x as i32, y as i32), radius_small, rgb);
         }
     }

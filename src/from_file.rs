@@ -1,11 +1,11 @@
-use crate::Parser;
-use crate::Record;
+use crate::{Parser, Record};
 use anyhow::Result;
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 use std::time::UNIX_EPOCH;
 
+/// **Main entry of this library**. Parse a recorded game file into a `Record` and `Parser`
 pub fn from_file(file: &str) -> Result<(Record, Parser)> {
     let path = Path::new(file);
     let mut file = File::open(&path)?;

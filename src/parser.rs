@@ -8,6 +8,7 @@ use flate2::read::ZlibDecoder;
 use flate2::Decompress;
 use std::io::Read;
 
+/// Recorded game parser. Used to parse recorded game file
 pub struct Parser {
     pub header: StreamCursor,
     pub body: StreamCursor,

@@ -1,7 +1,8 @@
 use serde::Serialize;
 use std::fmt::Debug;
 
-/// Get value from Option<T> if it's Some and bail if it's None
+/// Get value from `Option<T>` if it's Some and bail if it's None
+#[doc(hidden)]
 #[macro_export]
 macro_rules! val {
     ($x:expr) => {
@@ -12,6 +13,7 @@ macro_rules! val {
     };
 }
 
+/// Store information of this game extracted from the recorded game. Most fields will be `None` if not present in the recorded game or exception occurs during parsing
 #[derive(Debug, Serialize)]
 pub struct Record {
     pub filename: String,
@@ -75,6 +77,7 @@ pub struct Record {
     pub debug: DebugInfo,
 }
 
+/// Information of a player
 #[derive(Debug, Serialize)]
 pub struct Player {
     pub slot: usize,
@@ -147,6 +150,7 @@ impl Player {
     }
 }
 
+/// Information of a chat message. Lobby chats don't have time. Field `player` is not implemented yet
 #[derive(Debug, Serialize)]
 pub struct Chat {
     pub time: Option<u32>,
@@ -157,6 +161,7 @@ pub struct Chat {
     pub content: Option<String>,
 }
 
+/// Debug information used by the parser
 #[derive(Debug)]
 pub struct DebugInfo {
     pub currentpos_header: usize,
@@ -176,6 +181,7 @@ pub struct DebugInfo {
     pub earlymovetime: Vec<u32>,
 }
 
+/// Version of the recorded game
 #[derive(Debug, PartialEq, Serialize)]
 pub enum Version {
     AoKTrial,

@@ -1,5 +1,5 @@
 use crate::trans;
-use crate::translations::*;
+use crate::translations::{en, zh};
 use crate::Record;
 use anyhow::Result;
 use encoding_rs::Encoding;
@@ -34,25 +34,25 @@ impl Record {
         })
     }
 
-    pub fn translate(&mut self) {
-        self.gametype = trans!(self.gametype_raw, GAME_TYPES_TRANS);
-        self.difficulty = trans!(self.difficulty_raw, DIFFICULTIES_TRANS);
-        self.revealmap = trans!(self.revealmap_raw, REVEAL_MAP_TRANS);
-        self.mapsize = trans!(self.mapsize_raw, MAP_SIZES_TRANS);
-        self.speed = trans!(self.speed_raw, GAME_SPEEDS_TRANS);
-        self.victorytype = trans!(self.victorytype_raw, VICTORY_TYPE_TRANS);
-        self.time2win = trans!(self.time2win_raw, VICTORY_TIME_TRANS);
-        self.mapname = trans!(self.mapid, MAP_NAMES_TRANS);
+    pub fn translate(&mut self, lang: &str) {
+        self.gametype = trans!(self.gametype_raw, lang, GAME_TYPES_TRANS);
+        self.difficulty = trans!(self.difficulty_raw, lang, DIFFICULTIES_TRANS);
+        self.revealmap = trans!(self.revealmap_raw, lang, REVEAL_MAP_TRANS);
+        self.mapsize = trans!(self.mapsize_raw, lang, MAP_SIZES_TRANS);
+        self.speed = trans!(self.speed_raw, lang, GAME_SPEEDS_TRANS);
+        self.victorytype = trans!(self.victorytype_raw, lang, VICTORY_TYPE_TRANS);
+        self.time2win = trans!(self.time2win_raw, lang, VICTORY_TIME_TRANS);
+        self.mapname = trans!(self.mapid, lang, MAP_NAMES_TRANS);
         for p in &mut self.players {
-            p.civ = trans!(p.civ_raw, CIVILIZATIONS_TRANS);
-            p.initage = trans!(p.initage_raw, AGES_TRANS);
+            p.civ = trans!(p.civ_raw, lang, CIVILIZATIONS_TRANS);
+            p.initage = trans!(p.initage_raw, lang, AGES_TRANS);
         }
     }
 
-    pub fn dump_json(&mut self) -> Result<String> {
+    pub fn convert_encoding(&mut self) {
         let encoding_name = self.detect_encoding().unwrap_or_else(|| "GBK".to_string());
         let encoding = Encoding::for_label(encoding_name.as_bytes()).unwrap_or(encoding_rs::GBK);
-
+        
         match self.instructions_raw.as_ref() {
             Some(x) => {
                 let (decoded, _, _) = encoding.decode(x);
@@ -80,16 +80,25 @@ impl Record {
                 None => (),
             }
         }
+    }
 
+    pub fn dump_json(&mut self) -> Result<String> {
+        self.convert_encoding();
         serde_json::to_string(self).map_err(Into::into)
     }
 }
 
+/// Translates a raw value to a human-readable string
+#[doc(hidden)]
 #[macro_export]
 macro_rules! trans {
-    ($raw:expr, $lang:expr) => {
+    ($raw:expr, $lang:expr, $string:ident) => {
         if let Some(x) = $raw.as_ref() {
-            if let Some(y) = $lang.get(&(*x as i32)) {
+            let translated = match $lang {
+                "en" => en::$string.get(&(*x as i32)),
+                _ => zh::$string.get(&(*x as i32))
+            };
+            if let Some(y) = translated {
                 Some(y.to_string())
             } else {
                 None

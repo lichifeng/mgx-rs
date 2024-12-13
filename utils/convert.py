@@ -2,7 +2,7 @@ import requests
 import re
 
 def fetch_php_file():
-    url = "https://raw.githubusercontent.com/goto-bus-stop/recanalyst/refs/heads/master/resources/lang/zh/ageofempires.php"
+    url = "https://raw.githubusercontent.com/goto-bus-stop/recanalyst/refs/heads/master/resources/lang/en/ageofempires.php"
     response = requests.get(url)
     if response.status_code == 200:
         print(f"Download successful. Downloaded {len(response.text)} bytes.")
@@ -21,7 +21,7 @@ def extract_arrays(content):
         
         # Match array key definition
         if "=>" in line and "array (" not in line:
-            key_match = re.match(r"([^\s]+)\s*=>\s*'([^']+)'", line)
+            key_match = re.match(r"([^\s]+)\s*=>\s*'((?:[^'\\]|\\'|\\\\)*)'", line)
             if key_match and current_key:
                 current_array.append((int(key_match.group(1)), key_match.group(2)))
         

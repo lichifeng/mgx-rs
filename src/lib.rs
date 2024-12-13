@@ -1,13 +1,16 @@
+#![doc = include_str!("../README.md")]
+
 mod cursor;
 mod draw_map;
 pub use draw_map::draw_map;
-pub mod from_file;
+mod from_file;
+pub use from_file::from_file;
 mod mapcolors;
-pub mod parser;
+mod parser;
 pub use parser::Parser;
-pub mod record;
+mod record;
 pub use record::*;
-pub mod render;
+mod render;
 mod translations;
 mod guid;
 mod guess_winner;

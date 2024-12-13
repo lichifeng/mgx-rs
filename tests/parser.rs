@@ -1,4 +1,4 @@
-use mgx::from_file::from_file;
+use mgx::from_file;
 use mgx::Version;
 use mgx::draw_map;
 
@@ -21,7 +21,7 @@ fn aoc10_test() {
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
     assert_eq!(rec.ver, Some(Version::AoC10a));
     println!("Encoding: {:?}", rec.detect_encoding().unwrap());
-    rec.translate();
+    rec.translate("zh");
     println!("{:?}", rec.dump_json().unwrap());
 }
 
