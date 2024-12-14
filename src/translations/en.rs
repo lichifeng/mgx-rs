@@ -20,7 +20,7 @@ pub static GAME_TYPES_TRANS: phf::Map<i32, &'static str> = phf_map! {
     8i32 => "Turbo Random Map",
 };
 
-pub static MAP_STYLES_TRANS: phf::Map<i32, &'static str> = phf_map! {
+pub static _MAP_STYLES_TRANS: phf::Map<i32, &'static str> = phf_map! {
     0i32 => "Standard",
     1i32 => "Real World",
     2i32 => "Custom",
@@ -123,7 +123,7 @@ pub static MAP_NAMES_TRANS: phf::Map<i32, &'static str> = phf_map! {
     105i32 => "The Eye",
 };
 
-pub static RESOURCES_TRANS: phf::Map<i32, &'static str> = phf_map! {
+pub static _RESOURCES_TRANS: phf::Map<i32, &'static str> = phf_map! {
     0i32 => "Food",
     1i32 => "Wood",
     2i32 => "Stone",
@@ -234,7 +234,7 @@ pub static DIFFICULTIES_TRANS: phf::Map<i32, &'static str> = phf_map! {
     4i32 => "Easiest",
 };
 
-pub static UNITS_TRANS: phf::Map<i32, &'static str> = phf_map! {
+pub static _UNITS_TRANS: phf::Map<i32, &'static str> = phf_map! {
     1i32 => "Legionary",
     4i32 => "Archer",
     5i32 => "Hand Cannoneer",
@@ -1080,7 +1080,7 @@ pub static UNITS_TRANS: phf::Map<i32, &'static str> = phf_map! {
     1223i32 => "Arrow",
 };
 
-pub static RESEARCHES_TRANS: phf::Map<i32, &'static str> = phf_map! {
+pub static _RESEARCHES_TRANS: phf::Map<i32, &'static str> = phf_map! {
     2i32 => "Elite Tarkan",
     3i32 => "Yeomen",
     4i32 => "El Dorado",
@@ -1338,4 +1338,3 @@ pub static RESEARCHES_TRANS: phf::Map<i32, &'static str> = phf_map! {
     658i32 => "Set maximum population (no Houses)",
     665i32 => "Disable Vietnamese Vision",
 };
-

@@ -13,9 +13,21 @@ struct Cli {
     #[arg(short = 'm')]
     map: Option<PathBuf>,
 
-    /// Dump record information into a JSON string.
+    /// Dump game info into a JSON string.
     #[arg(short = 'j', long)]
     json: bool,
+
+    /// Use Chinese language for output
+    #[arg(long)]
+    zh: bool,
+
+    /// Dump header section to specified file
+    #[arg(long)]
+    header: Option<PathBuf>,
+
+    /// Dump body section to specified file
+    #[arg(long)]
+    body: Option<PathBuf>,
 }
 
 fn main() {
@@ -26,14 +38,34 @@ fn main() {
         std::process::exit(1);
     });
 
-    // Generate map if -m option is provided
+    if let Some(header_path) = cli.header {
+        parser.dump_header(header_path.to_str().unwrap()).unwrap_or_else(|e| {
+            eprintln!("Error dumping header: {}", e);
+            std::process::exit(1);
+        });
+    }
+
+    if let Some(body_path) = cli.body {
+        parser.dump_body(body_path.to_str().unwrap()).unwrap_or_else(|e| {
+            eprintln!("Error dumping body: {}", e);
+            std::process::exit(1);
+        });
+    }
+
     if let Some(map_path) = cli.map {
-        draw_map(&rec, &parser, map_path.to_str().unwrap()).expect("Failed to generate a map");
+        draw_map(&rec, &parser, map_path.to_str().unwrap()).unwrap_or_else(|e| {
+            eprintln!("Error: {}. Remove -m to get available data.", e);
+            std::process::exit(1);
+        });
     }
 
     // Print JSON if -j/--json flag is set
     if cli.json {
-        rec.translate("en");
+        if cli.zh {
+            rec.translate("zh");
+        } else {
+            rec.translate("en");
+        }
         if let Ok(json) = rec.dump_json() {
             println!("{}", json);
         } else {

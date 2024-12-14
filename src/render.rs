@@ -16,7 +16,7 @@ static ENCODING_MAP: phf::Map<&'static [u8], &'static str> = phf_map! {
     b"Kartentyp" => "windows-1252",       // kDe
     b"Map Type" => "windows-1252",        // kEn
     b"Tipo de mapa" => "windows-1252",    // kEs
-    b"Type de carte" => "windows-1252",  // kFr
+    b"Type de carte" => "windows-1252",   // kFr
     b"Tipo di mappa" => "windows-1252",   // kIt
     b"Kaarttype" => "windows-1252",       // kNl
     b"\xd2\xe8\xef\x20\xea\xe0\xf0\xf2\xfb" => "windows-1251",
@@ -43,7 +43,7 @@ impl Record {
         self.victorytype = trans!(self.victorytype_raw, lang, VICTORY_TYPE_TRANS);
         self.time2win = trans!(self.time2win_raw, lang, VICTORY_TIME_TRANS);
         self.mapname = trans!(self.mapid, lang, MAP_NAMES_TRANS);
-        for p in &mut self.players {
+        for p in self.players.iter_mut() {
             p.civ = trans!(p.civ_raw, lang, CIVILIZATIONS_TRANS);
             p.initage = trans!(p.initage_raw, lang, AGES_TRANS);
         }
@@ -52,7 +52,7 @@ impl Record {
     pub fn convert_encoding(&mut self) {
         let encoding_name = self.detect_encoding().unwrap_or_else(|| "GBK".to_string());
         let encoding = Encoding::for_label(encoding_name.as_bytes()).unwrap_or(encoding_rs::GBK);
-        
+
         match self.instructions_raw.as_ref() {
             Some(x) => {
                 let (decoded, _, _) = encoding.decode(x);
@@ -96,7 +96,7 @@ macro_rules! trans {
         if let Some(x) = $raw.as_ref() {
             let translated = match $lang {
                 "en" => en::$string.get(&(*x as i32)),
-                _ => zh::$string.get(&(*x as i32))
+                _ => zh::$string.get(&(*x as i32)),
             };
             if let Some(y) = translated {
                 Some(y.to_string())

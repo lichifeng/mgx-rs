@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::fmt::Debug;
 
-/// Get value from `Option<T>` if it's Some and bail if it's None
+/// Get value from `Option<T>` if it's Some and `anyhow::bail!` if `None`
 #[doc(hidden)]
 #[macro_export]
 macro_rules! val {
@@ -14,7 +14,7 @@ macro_rules! val {
 }
 
 /// Store information of this game extracted from the recorded game. Most fields will be `None` if not present in the recorded game or exception occurs during parsing
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Default)]
 pub struct Record {
     pub filename: String,
     pub filesize: usize,
@@ -31,6 +31,7 @@ pub struct Record {
     pub speed_raw: Option<u32>,
     pub speed: Option<String>,
     pub recorder: Option<u16>,
+    /// **GAIA** is counted
     pub totalplayers: Option<u8>,
     pub mapsize_raw: Option<u32>,
     pub mapsize: Option<String>,
@@ -78,7 +79,7 @@ pub struct Record {
 }
 
 /// Information of a player
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Default)]
 pub struct Player {
     pub slot: usize,
     pub index: Option<i32>,
@@ -107,42 +108,15 @@ pub struct Player {
     pub initpop: Option<f32>,
     pub initcivilian: Option<f32>,
     pub initmilitary: Option<f32>,
+    /// Only presents in UP1.5
     pub modversion: Option<f32>,
+    /// Default is `false`
     pub winner: Option<bool>,
 }
 
 impl Player {
     pub fn new(slot: usize) -> Self {
-        Player {
-            slot,
-            index: None,
-            playertype: None,
-            name_raw: None,
-            name: None,
-            teamid: None,
-            ismainop: None,
-            initx: None,
-            inity: None,
-            civ_raw: None,
-            civ: None,
-            colorid: None,
-            disconnected: None,
-            resigned: None,
-            feudaltime: None,
-            castletime: None,
-            imperialtime: None,
-            initage_raw: None,
-            initage: None,
-            initfood: None,
-            initwood: None,
-            initstone: None,
-            initgold: None,
-            initpop: None,
-            initcivilian: None,
-            initmilitary: None,
-            modversion: None,
-            winner: None,
-        }
+        Player { slot, ..Default::default() }
     }
 
     pub fn isvalid(&self) -> bool {
@@ -162,7 +136,7 @@ pub struct Chat {
 }
 
 /// Debug information used by the parser
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DebugInfo {
     pub currentpos_header: usize,
     pub currentpos_body: usize,
@@ -209,55 +183,6 @@ impl Record {
             filename,
             filesize,
             lastmod,
-            guid: None,
-            verlog: None,
-            ver: None,
-            verraw: None,
-            versave: None,
-            versave2: None,
-            verscenario: None,
-            include_ai: None,
-            speed_raw: None,
-            speed: None,
-            recorder: None,
-            totalplayers: None,
-            mapsize_raw: None,
-            mapsize: None,
-            revealmap_raw: None,
-            revealmap: None,
-            mapx: None,
-            mapy: None,
-            nofog: None,
-            instantbuild: None,
-            enablecheats: None,
-            restoretime: None,
-            ismultiplayer: None,
-            isconquest: None,
-            relics2win: None,
-            explored2win: None,
-            anyorall: None, // TODO: what's this? name it to `all2win`?
-            victorytype_raw: None,
-            victorytype: None,
-            score2win: None,
-            time2win_raw: None,
-            time2win: None,
-            scenariofilename_raw: None,
-            scenariofilename: None,
-            instructions_raw: None,
-            instructions: None,
-            duration: 0,
-            chat: Vec::new(),
-            mapid: None,
-            mapname: None,
-            difficulty_raw: None,
-            difficulty: None,
-            lockteams: None,
-            poplimit: None,
-            gametype_raw: None,
-            gametype: None,
-            lockdiplomacy: None,
-            haswinner: false,
-            matchup: None,
             players: [
                 Player::new(0),
                 Player::new(1),
@@ -270,22 +195,10 @@ impl Record {
                 Player::new(8),
             ],
             debug: DebugInfo {
-                currentpos_header: 0,
-                currentpos_body: 0,
-                aipos: 0,
-                initpos: 0,
-                triggerpos: 0,
                 triggersign: 1.6, // Other values in higher versions
-                settingspos: 0,
-                disabledtechspos: 0,
-                victorypos: 0,
-                scenariopos: 0,
-                mappos: None,
-                playerinitpos_by_idx: [None, None, None, None, None, None, None, None, None],
-                earlymovecount: 0,
-                earlymovecmd: Vec::new(),
-                earlymovetime: Vec::new(),
+                ..Default::default()
             },
+            ..Default::default()
         }
     }
 }

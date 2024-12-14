@@ -1,11 +1,11 @@
 use crate::{Parser, Record};
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 use std::time::UNIX_EPOCH;
 
-/// **Main entry of this library**. Parse a recorded game file into a `Record` and `Parser`
+/// Parse a recorded game file into a `Record` and `Parser`. Game info can be accessed from `Record`
 pub fn from_file(file: &str) -> Result<(Record, Parser)> {
     let path = Path::new(file);
     let mut file = File::open(&path)?;
@@ -14,7 +14,11 @@ pub fn from_file(file: &str) -> Result<(Record, Parser)> {
 
     // Get file metadata
     let metadata = fs::metadata(&path)?;
-    let filename = path.file_name().unwrap().to_str().unwrap().to_string();
+    let filename = path.file_name()
+        .ok_or_else(|| anyhow!("Failed to get file name"))?
+        .to_str()
+        .ok_or_else(|| anyhow!("Failed to convert file name to &str"))?
+        .to_string();
     let last_modified = metadata.modified()?.duration_since(UNIX_EPOCH)?.as_secs();
 
     let mut record = Record::new(filename, buffer.len(), last_modified);

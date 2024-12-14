@@ -15,6 +15,7 @@ pub struct Parser {
 }
 
 impl Parser {
+    /// Input buffer will be consumed
     pub fn new(b: Vec<u8>) -> Result<Self> {
         let rawheader_end = u32::from_le_bytes(b[0..4].try_into()?);
         let nextpos = u32::from_le_bytes(b[4..8].try_into()?);
@@ -31,17 +32,17 @@ impl Parser {
     }
 
     pub fn dump_header(&self, filename: &str) -> Result<()> {
-        std::fs::write(filename, &self.header.data())?;
+        std::fs::write(filename, self.header.data())?;
         Ok(())
     }
 
     pub fn dump_body(&self, filename: &str) -> Result<()> {
-        std::fs::write(filename, &self.body.data())?;
+        std::fs::write(filename, self.body.data())?;
         Ok(())
     }
 
     /// Try to extract info from the recorded game.   
-    /// Parsing may not be complete. Check keys in the `Record` when using it.
+    /// Parsing may not be complete. Check `None` for fields when using `Record`.
     pub fn parse_to(self: &mut Self, r: &mut Record) -> Result<&mut Self> {
         let h = &mut self.header;
 
@@ -253,10 +254,10 @@ impl Parser {
             None => bail!("can't find settingspos"),
         };
 
-        // Find disabled techs
+        // Locate disabled techs
         r.debug.disabledtechspos = r.debug.settingspos - 5456;
 
-        // Find victory pos
+        // Locate victory pos
         r.debug.victorypos = r.debug.disabledtechspos - 12544 - 44;
 
         // Victory
@@ -274,7 +275,7 @@ impl Parser {
         r.time2win_raw = h.get_i32();
 
         // Find scenario pos
-        let needle = match r.ver {
+        let needle = match &r.ver {
             Some(Version::AoK) => vec![0x9a, 0x99, 0x99, 0x3f], // float 1.20
             _ => vec![0xf6, 0x28, 0x9c, 0x3f],                  // float 1.22
         };

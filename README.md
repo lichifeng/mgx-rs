@@ -13,19 +13,29 @@
 ```text
 # mgx --help
 
+A parser for **Age of Empires II** recorded games.
+
 Usage: mgx [OPTIONS] <RECORD_PATH>
 
 Arguments:
   <RECORD_PATH>  Path to the record file. Only AoK(.mgl)/AoC(.mgx)/UP1.5(.mgz) are supported
 
 Options:
-  -m <MAP>       Generate a map image as a .png image.\n Rotated 45° counterclockwise and change height to 50% to get a in-game look
-  -j, --json     Output record information in a JSON string
-  -h, --help     Print help
-  -V, --version  Print version
+  -m <MAP>               Generate a map image as a .png image. Rotated 45° counterclockwise and change height to 50% to get a in-game look
+  -j, --json             Dump game info into a JSON string
+      --zh               Use Chinese language for output
+      --header <HEADER>  Dump header section to specified file
+      --body <BODY>      Dump body section to specified file
+  -h, --help             Print help
+  -V, --version          Print version
 ```
 
 ## Usage(as a library)
+
+> Parse from a buffer if you need more control over the parsing.   
+> Create a `Record` manually and pass it to a `Parser`. Extracted data will persists in the `Record` even if the `Parser` returns an error.
+> `mgx::from_file()` will result in nothing if any error occurs.
+
 ### Parse a file directly
 ```rust
 let filename = "path-to-test-record.mgx";

@@ -1,4 +1,4 @@
-use crate::Record;
+use crate::{Record, Player};
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 /// If all players of PoV's team have resigned and the other side has survivors, the other side is considered to have won.
 /// Matchup is generated here, too.
 pub fn guess(rec: &mut Record) -> Result<()> {
-    let mut teams: HashMap<u8, Vec<&mut crate::Player>> = HashMap::new();
+    let mut teams: HashMap<u8, Vec<&mut Player>> = HashMap::new();
 
     // teamid == 1 means no team
     for p in rec.players.iter_mut() {
@@ -54,8 +54,8 @@ pub fn guess(rec: &mut Record) -> Result<()> {
 
     let mut pov_team: Option<&u8> = Option::None;
     let mut pov_resigned = false;
-    let mut team1_resigned:usize = 0;
-    let mut team2_resigned:usize = 0;
+    let mut team1_resigned: usize = 0;
+    let mut team2_resigned: usize = 0;
 
     team1.iter().for_each(|p| {
         if p.resigned.is_some() {
