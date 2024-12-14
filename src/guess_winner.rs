@@ -1,6 +1,6 @@
-use crate::{Record, Player};
+use crate::{Player, Record};
 use anyhow::{anyhow, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// Only games with 2 sides are evaluated.
 /// A team is considered to have won if players of the other side all have resigned.
@@ -20,7 +20,10 @@ pub fn guess(rec: &mut Record) -> Result<()> {
                 if id > 1 {
                     id
                 } else {
-                    100 + p.slot as u8
+                    match p.index {
+                        Some(index) => index as u8 + 100,
+                        None => anyhow::bail!("Player slot {} has no index", p.slot),
+                    }
                 }
             }
             _ => continue,
@@ -36,21 +39,23 @@ pub fn guess(rec: &mut Record) -> Result<()> {
         }
     }
 
-    let mut team_sizes: Vec<usize> = teams.values().map(|v| v.len()).collect();
+    let mut team_sizes: Vec<usize> =
+        teams.values().map(|v| v.iter().filter_map(|p| p.index).collect::<HashSet<_>>().len()).collect();
     team_sizes.sort();
-    rec.matchup = Some(team_sizes);
 
-    if teams.len() != 2 {
+    rec.matchup = Some(team_sizes.clone());
+
+    if team_sizes.len() != 2 {
         return Ok(()); // not a 2-sided game
+    }
+
+    if team_sizes.get(0) != team_sizes.get(1) {
+        return Ok(()); // not a fair game
     }
 
     let mut iter = teams.iter_mut();
     let (team1_id, team1) = iter.next().ok_or(anyhow!("No team 1"))?;
-    let (team2_id, team2) = iter.next().ok_or(anyhow!("No team 2"))?;
-
-    if team1.len() != team2.len() {
-        return Ok(()); // not a fair game
-    }
+    let (team2_id, team2) = iter.next().ok_or(anyhow!("No team 2"))?; 
 
     let mut pov_team: Option<&u8> = Option::None;
     let mut pov_resigned = false;

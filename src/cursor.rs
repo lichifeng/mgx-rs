@@ -50,8 +50,8 @@ impl StreamCursor {
         let dest = self.pos_in_data as isize + dist;
         if dest < 0 {
             self.pos_in_data = 0;
-        } else if dest as usize > self.src.len() {
-            self.pos_in_data = self.src.len();
+        } else if dest as usize > self.data().len() {
+            self.pos_in_data = self.data().len();
         } else {
             self.pos_in_data = dest as usize;
         }

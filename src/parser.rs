@@ -53,8 +53,11 @@ impl Parser {
         if -1.0 == val!(r.versave) {
             r.versave2 = h.get_u32();
         }
-        if r.ver != Some(Version::AoK) {
-            r.verlog = self.body.peek_u32();
+        let verlog_check = self.body.peek_u32();
+        if verlog_check == Some(500) {
+            r.ver = Some(Version::AoK)
+        } else {
+            r.verlog = verlog_check;
         }
         match &verraw {
             b"TRL 9.3" => {
@@ -127,7 +130,7 @@ impl Parser {
         h.mov(29);
         r.recorder = h.get_u16();
         r.totalplayers = h.get_u8();
-        if r.ver != Some(Version::AoK) {
+        if r.ver != Some(Version::AoK) && r.ver != Some(Version::AoKTrial) {
             r.instantbuild = h.get_bool(1);
             r.enablecheats = h.get_bool(1);
         }
@@ -230,10 +233,10 @@ impl Parser {
         h.mov(4); // fog of war
         r.mapsize_raw = h.get_u32();
         r.poplimit = h.get_u32();
-        if val!(r.poplimit) < 40 {
+        if val!(r.poplimit) <= 40 {
             r.poplimit = r.poplimit.map(|pop| pop * 25);
         }
-        if r.ver != Some(Version::AoK) {
+        if r.ver != Some(Version::AoK) && r.ver != Some(Version::AoKTrial) {
             r.gametype_raw = h.get_u8();
             r.lockdiplomacy = h.get_bool(1);
 
@@ -276,8 +279,8 @@ impl Parser {
 
         // Find scenario pos
         let needle = match &r.ver {
-            Some(Version::AoK) => vec![0x9a, 0x99, 0x99, 0x3f], // float 1.20
-            _ => vec![0xf6, 0x28, 0x9c, 0x3f],                  // float 1.22
+            Some(Version::AoK) | Some(Version::AoKTrial) => vec![0x9a, 0x99, 0x99, 0x3f], // float 1.20
+            _ => vec![0xf6, 0x28, 0x9c, 0x3f], // float 1.22
         };
         match h.rfind(&needle, 0..r.debug.victorypos) {
             Some(pos) => {
@@ -291,7 +294,7 @@ impl Parser {
         h.mov(16 * 256 + 16 * 4 + 16 * 16 + 5 + 4);
         r.scenariofilename_raw = h.extract_str_l16();
         h.mov(4 * 5);
-        if r.ver != Some(Version::AoK) {
+        if r.ver != Some(Version::AoK) && r.ver != Some(Version::AoKTrial) {
             h.mov(4);
         }
         r.instructions_raw = h.extract_str_l16();
@@ -305,7 +308,7 @@ impl Parser {
         h.seek(r.debug.settingspos);
 
         h.mov(4 + 8);
-        if r.ver != Some(Version::AoK) {
+        if r.ver != Some(Version::AoK) && r.ver != Some(Version::AoKTrial) {
             r.mapid = h.get_u32();
         }
         r.difficulty_raw = h.get_i32();
@@ -384,7 +387,7 @@ impl Parser {
                 h.mov(4 * 2);
                 r.players[i].initmilitary = h.get_f32();
                 h.mov(756 - 41 * 4);
-                if r.ver != Some(Version::AoK) {
+                if r.ver != Some(Version::AoK) && r.ver != Some(Version::AoKTrial) {
                     h.mov(36);
                 }
                 if r.ver == Some(Version::UP15) || r.ver == Some(Version::MCP) {
@@ -395,7 +398,7 @@ impl Parser {
                 r.players[i].initx = h.get_f32();
                 r.players[i].inity = h.get_f32();
 
-                if r.ver != Some(Version::AoK) {
+                if r.ver != Some(Version::AoK) && r.ver != Some(Version::AoKTrial) {
                     let num_savedviews = val!(h.get_i32());
                     if num_savedviews > 0 {
                         h.mov(num_savedviews as isize * 8);
@@ -422,7 +425,8 @@ impl Parser {
 
         if b.remain() >= 4 && val!(b.peek_u32()) == 0 {
             b.mov(4);
-        } else if b.remain() >= 8 && val!(b.peek_u32()) != 2 {
+        }
+        if b.remain() >= 8 && val!(b.peek_u32()) != 2 {
             b.mov(8);
         }
 
@@ -451,6 +455,7 @@ impl Parser {
                     match cmd {
                         COMMAND_RESIGN => {
                             let slot = val!(b.get_i8());
+                            b.mov(1);
                             if slot >= 0 && slot < 9 && r.players[slot as usize].isvalid() {
                                 r.players[slot as usize].resigned = Some(r.duration);
                                 r.players[slot as usize].disconnected = b.get_bool(4);
@@ -460,7 +465,7 @@ impl Parser {
                             b.mov(7);
                             let slot = val!(b.get_i8());
                             if slot < 0 || slot > 8 || !r.players[slot as usize].isvalid() {
-                                break;
+                                ()
                             }
                             b.mov(1);
                             let techid = val!(b.get_i16());
@@ -538,7 +543,7 @@ impl Parser {
                     }
                     let msg = b.extract_str_l32();
                     if let Some(message) = msg.as_ref() {
-                        if message.len() >= 5
+                        if message.len() >= 7
                             && message.starts_with(b"@#")
                             && message.ends_with(b"--")
                             && message[3] == b'-'

@@ -110,7 +110,7 @@ pub struct Player {
     pub initmilitary: Option<f32>,
     /// Only presents in UP1.5
     pub modversion: Option<f32>,
-    /// Default is `false`
+    /// Default is `false`. Only for fair 2-sided games
     pub winner: Option<bool>,
 }
 

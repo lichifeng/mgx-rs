@@ -153,9 +153,11 @@ pub static VICTORY_TIME_TRANS: phf::Map<i32, &'static str> = phf_map! {
 };
 
 pub static GAME_SPEEDS_TRANS: phf::Map<i32, &'static str> = phf_map! {
-    0i32 => "Slow",
-    1i32 => "Normal",
-    2i32 => "Fast",
+    100i32 => "Slow",
+    150i32 => "Normal",
+    178i32 => "Normal",
+    200i32 => "Fast",
+    237i32 => "Fast",
 };
 
 pub static REVEAL_MAP_TRANS: phf::Map<i32, &'static str> = phf_map! {

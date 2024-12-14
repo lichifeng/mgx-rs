@@ -3,60 +3,180 @@ use mgx::Version;
 use mgx::draw_map;
 
 #[test]
-fn aok_test() {
-    let filename = "tests/recs/aok_4v4_fast.mgl";
-    let (rec, parser) = from_file(filename).unwrap(); // This guid is from MgxParser
-    println!("aok versave: {:?}", rec.versave);
+fn aok_trial_test() {
+    let filename = "tests/recs/aok_trial.mgl";
+    let (rec, parser) = from_file(filename).unwrap();
+    
+    assert_eq!(rec.ver, Some(Version::AoKTrial));
+    assert_eq!(rec.duration, 1933820);
+    assert_eq!(rec.matchup, Some(vec![1, 1, 1]));
+    assert_eq!(rec.guid, Some("311015c86de5525959c0c50f0aba8e79".to_string()));
+
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
-    assert_eq!(rec.ver, Some(Version::AoK));
 }
 
 #[test]
-fn aoc10_test() {
-    let filename = "tests/recs/28083e6497dc1a0a3f8ca3a54c2622c2.mgx";
-    let (mut rec, parser) = from_file(filename).unwrap(); // This guid is from MgxParser
-    println!("aoc10 versave: {:?}", rec.versave);
+fn aok_test() {
+    // Conquest Game: Win this game by destroying all enemy villagers, military units, boats, and buildings.
+    // Map Size: Large (8 player)
+    // Map Type: Black Forest
+    // Age: Post-Imperial Age
+    // Resources: Standard
+    // Difficulty Level: Easiest
+    // Fixed Positions: Yes
+    // Reveal Map: Yes
+    // Full Tech Tree: No
+    // Enable Cheating: No
+    // Population Limit: 200
+
+    let filename = "tests/recs/aok_4v4_fast.mgl";
+    let (mut rec, parser) = from_file(filename).unwrap();
+    rec.translate("en");
+    assert_eq!(rec.ver, Some(Version::AoK));
+    assert_eq!(rec.speed, Some("Fast".to_string()));
+    assert_eq!(rec.duration, 9770100);
+    assert_eq!(rec.matchup, Some(vec![4, 4]));
+    assert_eq!(rec.guid, Some("94ac726a334ab9d6f1e8e4ddc8ce5a6a".to_string()));
+
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
-    assert_eq!(rec.ver, Some(Version::AoC10a));
-    println!("Encoding: {:?}", rec.detect_encoding().unwrap());
+}
+
+/// This test also checks if different views of the same game have the same GUID
+#[test]
+fn aoc10a_test() {
+    // 征服制游戏: 消灭敌人所有村民,部队，船舰和建筑.
+    // 地图尺寸: 大型 (8个玩家)
+    // 地图类型: 阿拉伯半岛
+    // 年代: 标准
+    // 资源: 标准
+    // 难度: 标准
+    // 固定地点: 是
+    // 显示地图: 否
+    // 完全科技树: 否
+    // 允许作弊: 否
+    // 人口上限: 200
+    let filename = "tests/recs/aoc10a_4v4_standard_1.mgx";
+    let (mut rec, parser) = from_file(filename).unwrap();
     rec.translate("zh");
-    println!("{:?}", rec.dump_json().unwrap());
+    assert_eq!(rec.ver, Some(Version::AoC10a));
+    assert_eq!(rec.speed, Some("正常".to_string()));
+    assert_eq!(rec.duration, 3235875);
+    assert_eq!(rec.matchup, Some(vec![4, 4]));
+    assert_eq!(rec.guid, Some("6f5993c128590c318569669656d6886b".to_string()));
+    assert_eq!(rec.chat.len(), 2);
+    assert!(rec.haswinner);
+
+    let filename2 = "tests/recs/aoc10a_4v4_standard_2.mgx";
+    let (rec2, _) = from_file(filename2).unwrap();
+    assert_eq!(rec2.guid, Some("6f5993c128590c318569669656d6886b".to_string()));
+
+    draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
+    std::fs::remove_file(format!("{}.png", filename)).unwrap();
+}
+
+#[test]
+fn aoc10a_1v7_ai_test() {
+    let filename = "tests/recs/1v7_hardest_spain_aoc10.mgx";
+    let (rec, parser) = from_file(filename).unwrap();
+    assert_eq!(rec.include_ai, Some(true));
+    assert_eq!(rec.matchup, Some(vec![1, 7]));
+
+    draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
+    std::fs::remove_file(format!("{}.png", filename)).unwrap();
 }
 
 #[test]
 fn aoc10c_test() {
-    let filename = "tests/recs/aoc-1.0c.mgx";
+    // 征服制游戏: 消灭敌人所有村民,部队，船舰和建筑.
+    // 地图尺寸: 微型 (2 玩家)
+    // 地图类型: 阿拉伯半岛
+    // 年代: 标准
+    // 资源: 标准
+    // 难度: 标准
+    // 固定地点: 是
+    // 显示地图: 否
+    // 完全科技树: 否
+    // 允许作弊: 否
+    // 人口上限: 200
+    let filename = "tests/recs/aoc10c_1v1_with_spectator.mgx";
     let (mut rec, parser) = from_file(filename).unwrap();
-    println!("aoc10c versave: {:?}", rec.versave);
+    rec.translate("en");
+    assert_eq!(rec.ver, Some(Version::AoC10c));
+    assert_eq!(rec.speed, Some("Normal".to_string()));
+    assert_eq!(rec.duration, 1710630);
+    assert_eq!(rec.matchup, Some(vec![1, 1]));
+    assert_eq!(rec.guid, Some("8c1e850d8ebc3e4375f38e6d927bab22".to_string()));
+    assert!(rec.haswinner);
+
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
-    assert_eq!(rec.ver, Some(Version::AoC10c));
-    println!("Encoding: {:?}", rec.detect_encoding().unwrap());
-    println!("{:?}", rec.dump_json().unwrap());
 }
 
 #[test]
-fn up15_test() {
-    let filename = "tests/recs/up1.5.mgz";
-    let (mut rec, parser) = from_file(filename).unwrap();
-    println!("up15 versave: {:?}", rec.versave);
+fn aoc10c_ai_test() {
+    let filename = "tests/recs/aoc10c_with_AI.mgx";
+    let (rec, parser) = from_file(filename).unwrap();
+    assert_eq!(rec.include_ai, Some(true));
+    
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
-    assert_eq!(rec.ver, Some(Version::UP15));
-    println!("Encoding: {:?}", rec.detect_encoding().unwrap());
-    println!("{:?}", rec.dump_json().unwrap());
+}
+
+#[test]
+fn up12_ai_test() {
+    // Partie en mode Conquête : Le joueur qui détruit tous les villageois, unités militaires, navires de combats et bâtiments ennemis remporte la partie.
+    // Taille de la carte : Très longue
+    // Type de carte : Montagnes
+    // Âge : Standard
+    // Ressources : Standard
+    // Niveau de difficulté : Très difficile
+    // Positions fixes : Oui
+    // Révéler la carte : Non
+    // Arbre complet des technologies : Non
+    // Permettre le mode triche : Non
+    // Limite de population : 1000
+    let filename = "tests/recs/up12_3v3_with_ai.mgx";
+    let (rec, parser) = from_file(filename).unwrap();
+    assert_eq!(rec.include_ai, Some(true));
+    assert_eq!(rec.matchup, Some(vec![3, 3]));
+    assert_eq!(rec.poplimit, Some(1000));
+    
+    draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
+    std::fs::remove_file(format!("{}.png", filename)).unwrap();
 }
 
 #[test]
 fn up14_scenario_test() {
     let filename = "tests/recs/scenario-with-messages.mgz";
     let (rec, parser) = from_file(filename).unwrap();
-    draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
-    std::fs::remove_file(format!("{}.png", filename)).unwrap();
     assert!(rec.verscenario.unwrap() - 1.22 < 0.0001);
     assert_eq!(rec.ver, Some(Version::UP14));
+
+    draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
+    std::fs::remove_file(format!("{}.png", filename)).unwrap();
+}
+
+#[test]
+fn up15_test() {
+    let filename = "tests/recs/up1.5.mgz";
+    let (rec, parser) = from_file(filename).unwrap();    
+    assert_eq!(rec.ver, Some(Version::UP15));
+
+    draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
+    std::fs::remove_file(format!("{}.png", filename)).unwrap();
+}
+
+#[test]
+fn hd_test() {
+    let filename = "tests/recs/HD-FE.mgx2";
+    match from_file(filename) {
+        Err(e) => {
+            assert!(e.to_string().contains("DE/HD or higher versions are not supported"));
+        }
+        _ => (),
+    }
 }
 
 #[test]
@@ -68,16 +188,4 @@ fn de63_test() {
         }
         _ => (),
     }
-}
-
-#[test]
-fn ai_test() {
-    let filename = "tests/recs/1v7_hardest_spain_aoc10.mgx";
-    let (rec, parser) = from_file(filename).unwrap();
-    draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
-    std::fs::remove_file(format!("{}.png", filename)).unwrap();
-    assert_eq!(rec.include_ai, Some(true));
-    println!("speed: {:?}", rec.speed_raw);
-    println!("map: {:?}, {:?}", rec.mapx, rec.mapy);
-    println!("Encoding: {:?}", rec.detect_encoding().unwrap());
 }
