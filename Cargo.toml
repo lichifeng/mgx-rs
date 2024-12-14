@@ -8,7 +8,7 @@ readme = "README.md"
 homepage = "https://aocrec.com"
 repository = "https://github.com/lichifeng/mgx-rs.git"
 license = "MIT"
-keywords = ["age-of-empires", "aoc", "game replay"]
+keywords = ["age-of-empires", "aoc", "game-replay"]
 categories = ["Games", "Parsing tools"]
 exclude = ["tests/*", ".vscode/*", "utils/*"]
 
