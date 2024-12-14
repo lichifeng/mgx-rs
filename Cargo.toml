@@ -10,7 +10,7 @@ repository = "https://github.com/lichifeng/mgx-rs.git"
 license = "MIT"
 keywords = ["age of empires", "aoc", "mgl", "mgx", "mgz", "game replay"]
 categories = ["Games", "Parsing tools"]
-exclude = ["tests/*"]
+exclude = ["tests/*", ".vscode/*", "utils/*"]
 
 [dependencies]
 anyhow = "1.0.94"
