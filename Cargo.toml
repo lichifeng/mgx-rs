@@ -9,7 +9,7 @@ homepage = "https://aocrec.com"
 repository = "https://github.com/lichifeng/mgx-rs.git"
 license = "MIT"
 keywords = ["age-of-empires", "aoc", "game-replay"]
-categories = ["Games", "Parsing tools"]
+categories = ["games", "parsing"]
 exclude = ["tests/*", ".vscode/*", "utils/*"]
 
 [dependencies]
