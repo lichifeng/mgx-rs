@@ -1,6 +1,9 @@
 use clap::Parser;
-use mgx::{draw_map, from_file};
+use std::fs::{self, File};
+use std::io::Read;
+use std::path::Path;
 use std::path::PathBuf;
+use std::time::UNIX_EPOCH;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -33,10 +36,21 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
-    let (mut rec, parser) = from_file(cli.record_path.to_str().unwrap()).unwrap_or_else(|e| {
-        eprintln!("Error: {}", e);
+    let path = Path::new(cli.record_path.to_str().unwrap());
+    let mut file = File::open(&path).unwrap_or_else(|e| {
+        eprintln!("Error opening {}: {}", path.to_string_lossy(), e);
         std::process::exit(1);
     });
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).unwrap();
+
+    // Get file metadata
+    let metadata = fs::metadata(&path).unwrap();
+    let filename = path.file_name().unwrap().to_string_lossy();
+    let last_modified = metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap().as_secs();
+
+    let mut rec = mgx::Record::new(filename.into_owned(), buffer.len(), last_modified);
+    let mut parser = mgx::Parser::new(buffer).unwrap();
 
     if let Some(header_path) = cli.header {
         parser.dump_header(header_path.to_str().unwrap()).unwrap_or_else(|e| {
@@ -52,20 +66,26 @@ fn main() {
         });
     }
 
+    parser.parse_to(&mut rec).unwrap_or_else(|e| {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
+    });
+
     if let Some(map_path) = cli.map {
-        draw_map(&rec, &parser, map_path.to_str().unwrap()).unwrap_or_else(|e| {
+        mgx::draw_map(&rec, &parser, map_path.to_str().unwrap()).unwrap_or_else(|e| {
             eprintln!("Error: {}. Remove -m to get available data.", e);
             std::process::exit(1);
         });
     }
 
+    if cli.zh {
+        rec.translate("zh");
+    } else {
+        rec.translate("en");
+    }
+
     // Print JSON if -j/--json flag is set
     if cli.json {
-        if cli.zh {
-            rec.translate("zh");
-        } else {
-            rec.translate("en");
-        }
         if let Ok(json) = rec.dump_json() {
             println!("{}", json);
         } else {
@@ -73,6 +93,7 @@ fn main() {
         }
     } else {
         println!("Filename: {}", rec.filename);
+        println!("   Speed: {}", rec.speed.unwrap_or("N/A".to_string()));
         println!(" Version: {:?}", rec.ver.unwrap());
         println!(
             " Matchup: {}",
@@ -84,5 +105,6 @@ fn main() {
             (rec.duration / 1000 / 60) % 60,
             (rec.duration / 1000) % 60
         );
+        println!("    GUID: {}", rec.guid.unwrap_or("N/A".to_string()));
     }
 }
