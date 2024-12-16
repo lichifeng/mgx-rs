@@ -124,6 +124,7 @@ fn aoc10c_ai_test() {
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
 }
 
+/// This record contains a nextpos next to header length
 #[test]
 fn up12_ai_test() {
     // Partie en mode Conquête : Le joueur qui détruit tous les villageois, unités militaires, navires de combats et bâtiments ennemis remporte la partie.
@@ -166,6 +167,10 @@ fn up15_test() {
 
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
+
+    let filename2 = "tests/recs/up15_with_bad_command.mgz";
+    let (rec2, _) = from_file(filename2).unwrap();
+    assert_eq!(rec2.ver, Some(Version::UP15));
 }
 
 #[test]
@@ -188,4 +193,20 @@ fn de63_test() {
         }
         _ => (),
     }
+}
+
+#[test]
+fn headerlen_missing_test() {
+    //! This record has no header length(0x00 0x00 0x00 0x00)
+    let filename = "tests/recs/headerlen_is_missing.mgx";
+    let (rec, _) = from_file(filename).unwrap();    
+    assert_eq!(rec.ver, Some(Version::AoC10a));
+}
+
+#[test]
+fn next_chapter_test() {
+    //! This record has no header length(0x00 0x00 0x00 0x00)
+    let filename = "tests/recs/next_chapter_1.mgx";
+    let (rec, _) = from_file(filename).unwrap();    
+    assert_eq!(rec.ver, Some(Version::AoC10c));
 }

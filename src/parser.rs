@@ -16,17 +16,50 @@ pub struct Parser {
 
 impl Parser {
     /// Input buffer will be consumed
-    pub fn new(b: Vec<u8>) -> Result<Self> {
-        let rawheader_end = u32::from_le_bytes(b[0..4].try_into()?);
+    pub fn new(mut b: Vec<u8>) -> Result<Self> {
+        // Sometimes header length is missing(always 0x00), calculate actual header length with decompressed length is more reliable
+        // let rawheader_end = u32::from_le_bytes(b[0..4].try_into()?);
         let nextpos = u32::from_le_bytes(b[4..8].try_into()?);
         let rawheader_begin = if nextpos < b.len() as u32 { 8 } else { 4 };
 
         let mut header_buffer = Vec::new();
-        let rawheader = &b[rawheader_begin as usize..];
-        ZlibDecoder::new_with_decompress(rawheader, Decompress::new(false)).read_to_end(&mut header_buffer)?;
+        let mut decoder = ZlibDecoder::new_with_decompress(&b[rawheader_begin as usize..], Decompress::new(false));
+        decoder.read_to_end(&mut header_buffer)?;
+        let compressed_size = decoder.total_in(); // Get compressed size
+
+        if rawheader_begin == 8 && nextpos > 0 {
+            // Next chapter is not always following tight to the chapter command in body, do a trick to skip it
+            let mut next_nextpos = nextpos;
+            while next_nextpos > 0 && next_nextpos < b.len() as u32 {
+                let amend_start = next_nextpos;
+                let chapter_len =
+                    u32::from_le_bytes(b[next_nextpos as usize..next_nextpos as usize + 4].try_into()?) - amend_start;
+                next_nextpos = u32::from_le_bytes(b[next_nextpos as usize + 4..next_nextpos as usize + 8].try_into()?);
+
+                let mut bytes = Vec::with_capacity(8);
+                bytes.extend_from_slice(&0x01_u32.to_le_bytes());
+                bytes.extend_from_slice(&(chapter_len - 12).to_le_bytes());
+                b[amend_start as usize..amend_start as usize + 8].copy_from_slice(&bytes);
+            }
+
+            #[cfg(debug_assertions)]
+            {
+                let mut chapter_buffer = Vec::new();
+                match ZlibDecoder::new_with_decompress(&b[nextpos as usize + 8..], Decompress::new(false))
+                    .read_to_end(&mut chapter_buffer)
+                {
+                    Err(_) => bail!("Failed to decompress chapter header"),
+                    _ => {
+                        // println!("Decompressed chapter header size: {}", chapter_buffer.len());
+                        // write test body to file
+                        // std::fs::write("testbody.bin", &test_buffer).unwrap();
+                    }
+                }
+            }
+        }
 
         let header = StreamCursor::new(header_buffer, 0); // header cursor
-        let body = StreamCursor::new(b, rawheader_end as usize); // body cursor
+        let body = StreamCursor::new(b, compressed_size as usize + rawheader_begin as usize); // body cursor
 
         Ok(Parser { header, body })
     }
@@ -280,7 +313,7 @@ impl Parser {
         // Find scenario pos
         let needle = match &r.ver {
             Some(Version::AoK) | Some(Version::AoKTrial) => vec![0x9a, 0x99, 0x99, 0x3f], // float 1.20
-            _ => vec![0xf6, 0x28, 0x9c, 0x3f], // float 1.22
+            _ => vec![0xf6, 0x28, 0x9c, 0x3f],                                            // float 1.22
         };
         match h.rfind(&needle, 0..r.debug.victorypos) {
             Some(pos) => {
@@ -413,43 +446,44 @@ impl Parser {
         }
 
         // Body
-        let b = &mut self.body;
-
-        let sync_checksum_interval = 500;
-        if val!(b.peek_u32()) != sync_checksum_interval {
-            b.mov(4);
-        }
-        b.mov(4); // Sync checksum interval
-        r.ismultiplayer = b.get_bool(4);
-        b.mov(16);
-
-        if b.remain() >= 4 && val!(b.peek_u32()) == 0 {
-            b.mov(4);
-        }
-        if b.remain() >= 8 && val!(b.peek_u32()) != 2 {
-            b.mov(8);
-        }
-
         const OP_COMMAND: i32 = 0x01;
         const OP_SYNC: i32 = 0x02;
         const OP_VIEWLOCK: i32 = 0x03;
         const OP_CHAT: i32 = 0x04;
+
+        const COMMAND_RESIGN: u8 = 0x0b;
+        const COMMAND_RESEARCH: u8 = 0x65;
+        const COMMAND_TRAIN: u8 = 0x77;
+        const COMMAND_TRAIN_SINGLE: u8 = 0x64;
+        const COMMAND_BUILD: u8 = 0x66;
+        const COMMAND_TRIBUTE: u8 = 0x6c;
+        const COMMAND_POSTGAME: u8 = 0xff;
+        const COMMAND_MOVE: u8 = 0x03;
+        const COMMAND_SAVE: u8 = 0x1b;
+        const COMMAND_CHAPTER: u8 = 0x20;
+
+        let b = &mut self.body;
+
+        if r.ver == Some(Version::AoK) || r.ver == Some(Version::AoKTrial) {
+            debug_assert!(val!(b.peek_i32()) == 500);
+            b.mov(36);
+        } else {
+            b.mov(4);
+            debug_assert!(val!(b.peek_i32()) == 500);
+            b.mov(4); // interval
+            r.ismultiplayer = b.get_bool(4);
+            b.mov(16);
+        }
+        debug_assert!(val!(b.peek_i32()) == OP_SYNC);
+
         while b.remain() >= 4 {
-            let op_type = val!(b.get_i32());
+            let op_type = val!(b.get_i16()) as i32;
+            b.mov(2);
             match op_type {
                 OP_COMMAND => {
-                    let cmdlen = val!(b.get_u32());
+                    let cmdlen = val!(b.get_u32()) + 4;
                     let nextpos =
                         if b.remain() < cmdlen as usize { b.data().len() } else { b.tell() + cmdlen as usize };
-                    const COMMAND_RESIGN: u8 = 0x0b;
-                    const COMMAND_RESEARCH: u8 = 0x65;
-                    const COMMAND_TRAIN: u8 = 0x77;
-                    const COMMAND_TRAIN_SINGLE: u8 = 0x64;
-                    const COMMAND_BUILD: u8 = 0x66;
-                    const COMMAND_TRIBUTE: u8 = 0x6c;
-                    const COMMAND_POSTGAME: u8 = 0xff;
-                    const COMMAND_MOVE: u8 = 0x03;
-                    const COMMAND_SAVE: u8 = 0x1b;
 
                     let cmd = val!(b.get_u8());
                     match cmd {
@@ -472,22 +506,30 @@ impl Parser {
                             match techid {
                                 101 => r.players[slot as usize].feudaltime = Some(r.duration + 130000),
                                 102 => {
-                                    r.players[slot as usize].castletime = Some(
-                                        r.duration
-                                            + match val!(r.players[slot as usize].civ_raw) {
-                                                8 => 160000 / 1.10 as u32,
-                                                _ => 160000,
-                                            },
-                                    )
+                                    if let Some(civ_raw) = r.players[slot as usize].civ_raw {
+                                        r.players[slot as usize].castletime = Some(
+                                            r.duration
+                                                + match civ_raw {
+                                                    8 => 160000 / 1.10 as u32,
+                                                    _ => 160000,
+                                                },
+                                        )
+                                    } else {
+                                        r.players[slot as usize].castletime = Some(r.duration + 160000)
+                                    }
                                 }
                                 103 => {
-                                    r.players[slot as usize].imperialtime = Some(
-                                        r.duration
-                                            + match val!(r.players[slot as usize].civ_raw) {
-                                                8 => 190000 / 1.10 as u32,
-                                                _ => 190000,
-                                            },
-                                    )
+                                    if let Some(civ_raw) = r.players[slot as usize].civ_raw {
+                                        r.players[slot as usize].imperialtime = Some(
+                                            r.duration
+                                                + match civ_raw {
+                                                    8 => 190000 / 1.10 as u32,
+                                                    _ => 190000,
+                                                },
+                                        )
+                                    } else {
+                                        r.players[slot as usize].imperialtime = Some(r.duration + 190000)
+                                    }
                                 }
                                 _ => {}
                             }
@@ -519,6 +561,9 @@ impl Parser {
                         COMMAND_SAVE => {
                             // Handle save command
                         }
+                        COMMAND_CHAPTER => {
+                            // Handle chapter command
+                        }
                         _ => {
                             // Handle unknown command
                         }
@@ -527,20 +572,34 @@ impl Parser {
                     b.seek(nextpos);
                 }
                 OP_SYNC => {
-                    r.duration += val!(b.get_u32());
-                    let sync_data = val!(b.get_u32());
-                    b.mov(if sync_data == 0 { 28 } else { 0 });
+                    let time_delta = val!(b.get_i16());
+                    b.mov(2);
+                    if time_delta > 0 {
+                        r.duration += time_delta as u32;
+                    } else {
+                        #[cfg(debug_assertions)]
+                        println!("Negative time delta: {} @bodypos: {}", time_delta, b.tell());
+                        r.duration -= time_delta as u32;
+                    }
+                    let sync_data = val!(b.get_i16());
+                    b.mov(2);
+                    b.mov(if sync_data != 0x03 { 28 } else { 0 });
                     b.mov(12);
                 }
                 OP_VIEWLOCK => {
                     b.mov(12);
                 }
                 OP_CHAT => {
-                    if val!(b.peek_i32()) != -1 {
+                    let command = val!(b.get_i32());
+                    if command == 500 {
+                        if r.ver == Some(Version::AoK) || r.ver == Some(Version::AoKTrial) {
+                            b.mov(32);
+                        } else {
+                            b.mov(20);
+                        }
                         continue;
-                    } else {
-                        b.mov(4);
                     }
+                    debug_assert_eq!(command, -1);
                     let msg = b.extract_str_l32();
                     if let Some(message) = msg.as_ref() {
                         if message.len() >= 7
@@ -556,7 +615,10 @@ impl Parser {
                         r.chat.push(Chat { time: Some(r.duration), player: None, content_raw: msg, content: None });
                     }
                 }
-                _ => {}
+                _ => {
+                    #[cfg(debug_assertions)]
+                    bail!("Unknown Operation: {} @ {}", op_type, b.tell());
+                }
             }
         }
 

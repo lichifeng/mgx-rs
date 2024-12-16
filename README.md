@@ -13,7 +13,7 @@
 ```text
 # mgx --help
 
-A parser for **Age of Empires II** recorded games.
+A parser for Age of Empires II recorded games.
 
 Usage: mgx [OPTIONS] <RECORD_PATH>
 
@@ -79,3 +79,4 @@ parser.parse_to(&mut record)?;
 * <https://github.com/goto-bus-stop/recanalyst.git>
 * <https://github.com/happyleavesaoc/aoc-mgz.git>
 * <https://github.com/lichifeng/MgxParser.git>
+* <https://github.com/stefan-kolb/aoc-mgx-format>

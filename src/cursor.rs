@@ -7,9 +7,9 @@ use std::slice::Iter;
 /// Data stream is a part of the source stream.   
 /// Opernations should be done on the data stream.
 pub struct StreamCursor {
-    src: Vec<u8>,
-    pos_in_data: usize,
-    offset: usize,
+    pub src: Vec<u8>,
+    pub pos_in_data: usize,
+    pub offset: usize,
 }
 
 // Due to limitation of the boyer_moore_magiclen crate, we need to implement the BMByteSearchable trait for u8 slice.
