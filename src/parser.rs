@@ -18,7 +18,7 @@ impl Parser {
     /// Input buffer will be consumed
     pub fn new(mut b: Vec<u8>) -> Result<Self> {
         // Sometimes header length is missing(always 0x00), calculate actual header length with decompressed length is more reliable
-        // let rawheader_end = u32::from_le_bytes(b[0..4].try_into()?);
+        let mut rawheader_end = u32::from_le_bytes(b[0..4].try_into()?);
         let nextpos = u32::from_le_bytes(b[4..8].try_into()?);
         let rawheader_begin = if nextpos < b.len() as u32 { 8 } else { 4 };
 
@@ -26,6 +26,10 @@ impl Parser {
         let mut decoder = ZlibDecoder::new_with_decompress(&b[rawheader_begin as usize..], Decompress::new(false));
         decoder.read_to_end(&mut header_buffer)?;
         let compressed_size = decoder.total_in(); // Get compressed size
+        
+        if rawheader_end < compressed_size as u32 + rawheader_begin {
+            rawheader_end = compressed_size as u32 + rawheader_begin;
+        }
 
         if rawheader_begin == 8 && nextpos > 0 {
             // Next chapter is not always following tight to the chapter command in body, do a trick to skip it
@@ -59,7 +63,7 @@ impl Parser {
         }
 
         let header = StreamCursor::new(header_buffer, 0); // header cursor
-        let body = StreamCursor::new(b, compressed_size as usize + rawheader_begin as usize); // body cursor
+        let body = StreamCursor::new(b, rawheader_end as usize); // body cursor
 
         Ok(Parser { header, body })
     }
@@ -463,7 +467,7 @@ impl Parser {
         const COMMAND_CHAPTER: u8 = 0x20;
 
         let b = &mut self.body;
-
+        
         if r.ver == Some(Version::AoK) || r.ver == Some(Version::AoKTrial) {
             debug_assert!(val!(b.peek_i32()) == 500);
             b.mov(36);
@@ -474,9 +478,16 @@ impl Parser {
             r.ismultiplayer = b.get_bool(4);
             b.mov(16);
         }
-        debug_assert!(val!(b.peek_i32()) == OP_SYNC);
 
-        while b.remain() >= 4 {
+        debug_assert!({
+            if b.remain() >= 4 {
+                val!(b.peek_i32()) == OP_SYNC
+            } else {
+                true
+            }
+        });
+
+        while b.remain() >= 8 {
             let op_type = val!(b.get_i16()) as i32;
             b.mov(2);
             match op_type {
@@ -574,7 +585,7 @@ impl Parser {
                 OP_SYNC => {
                     let time_delta = val!(b.get_i16());
                     b.mov(2);
-                    if time_delta > 0 {
+                    if time_delta >= 0 {
                         r.duration += time_delta as u32;
                     } else {
                         #[cfg(debug_assertions)]
@@ -617,7 +628,7 @@ impl Parser {
                 }
                 _ => {
                     #[cfg(debug_assertions)]
-                    bail!("Unknown Operation: {} @ {}", op_type, b.tell());
+                    bail!("Unknown Operation: {} @ {}", op_type, b.tell() - 4);
                 }
             }
         }

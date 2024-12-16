@@ -8,7 +8,7 @@ macro_rules! val {
     ($x:expr) => {
         match $x {
             Some(x) => x,
-            None => bail!("{:?} is None", stringify!($x)),
+            None => bail!("{:?} is None @ {}, line: {}", stringify!($x), file!(), line!()),
         }
     };
 }

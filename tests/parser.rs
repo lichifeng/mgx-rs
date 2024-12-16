@@ -210,3 +210,11 @@ fn next_chapter_test() {
     let (rec, _) = from_file(filename).unwrap();    
     assert_eq!(rec.ver, Some(Version::AoC10c));
 }
+
+#[test]
+fn extra_bytes_after_header_test() {
+    //! This record has extra bytes after the compressed header
+    let filename = "tests/recs/extra_bytes_after_compressed_header.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert_eq!(rec.ver, Some(Version::AoC10a));
+}
