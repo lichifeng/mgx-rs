@@ -488,8 +488,7 @@ impl Parser {
         });
 
         while b.remain() >= 8 {
-            let op_type = val!(b.get_i16()) as i32;
-            b.mov(2);
+            let op_type = val!(b.get_i32());
             match op_type {
                 OP_COMMAND => {
                     let cmdlen = val!(b.get_u32()) + 4;
@@ -583,17 +582,15 @@ impl Parser {
                     b.seek(nextpos);
                 }
                 OP_SYNC => {
-                    let time_delta = val!(b.get_i16());
-                    b.mov(2);
-                    if time_delta >= 0 {
-                        r.duration += time_delta as u32;
-                    } else {
+                    let time_delta = val!(b.get_i32());
+                    if time_delta < 0 || time_delta > 1000 {
                         #[cfg(debug_assertions)]
-                        println!("Negative time delta: {} @bodypos: {}", time_delta, b.tell());
-                        r.duration -= time_delta as u32;
+                        bail!("Unusual time delta: {} @bodypos: {}", time_delta, b.tell() - 4);
+                        #[allow(unreachable_code)]
+                        continue;
                     }
-                    let sync_data = val!(b.get_i16());
-                    b.mov(2);
+                    r.duration += time_delta as u32;
+                    let sync_data = val!(b.get_i32());
                     b.mov(if sync_data != 0x03 { 28 } else { 0 });
                     b.mov(12);
                 }
@@ -628,7 +625,14 @@ impl Parser {
                 }
                 _ => {
                     #[cfg(debug_assertions)]
-                    bail!("Unknown Operation: {} @ {}", op_type, b.tell() - 4);
+                    if r.ver == Some(Version::AoK) 
+                    || r.ver == Some(Version::AoKTrial)
+                    || r.ver == Some(Version::AoC)
+                    || r.ver == Some(Version::AoCTrial)
+                    || r.ver == Some(Version::AoC10a)
+                    || r.ver == Some(Version::AoC10c) {
+                        bail!("Unknown Operation: {} @ {}", op_type, b.tell() - 4);
+                    }
                 }
             }
         }
