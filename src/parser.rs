@@ -7,11 +7,13 @@ use anyhow::{bail, Ok, Result};
 use flate2::read::ZlibDecoder;
 use flate2::Decompress;
 use std::io::Read;
+use chksum_hash_md5 as md5;
 
 /// Recorded game parser. Used to parse recorded game file
 pub struct Parser {
     pub header: StreamCursor,
     pub body: StreamCursor,
+    pub md5: String,
 }
 
 impl Parser {
@@ -62,10 +64,11 @@ impl Parser {
             }
         }
 
+        let md5 = md5::hash(b.as_slice()).to_hex_lowercase();
         let header = StreamCursor::new(header_buffer, 0); // header cursor
         let body = StreamCursor::new(b, rawheader_end as usize); // body cursor
 
-        Ok(Parser { header, body })
+        Ok(Parser { header, body, md5 })
     }
 
     pub fn dump_header(&self, filename: &str) -> Result<()> {
@@ -81,6 +84,8 @@ impl Parser {
     /// Try to extract info from the recorded game.   
     /// Parsing may not be complete. Check `None` for fields when using `Record`.
     pub fn parse_to(self: &mut Self, r: &mut Record) -> Result<&mut Self> {
+        r.md5 = Some(self.md5.clone());
+
         let h = &mut self.header;
 
         let verraw: [u8; 7] = h.current()[0..7].try_into()?;

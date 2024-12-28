@@ -103,10 +103,10 @@ impl StreamCursor {
 impl StreamCursor {
     pub fn peek_u8(&self) -> Option<u8> {
         if self.current().is_empty() {
-            return None;
+            None
         } else {
             let result = self.current()[0];
-            return Some(result);
+            Some(result)
         }
     }
 
@@ -120,26 +120,26 @@ impl StreamCursor {
 
     pub fn get_i8(&mut self) -> Option<i8> {
         if self.current().is_empty() {
-            return None;
+            None
         } else {
             let result = self.current()[0] as i8;
             self.pos_in_data += 1;
-            return Some(result);
+            Some(result)
         }
     }
 
     pub fn peek_u16(&self) -> Option<u16> {
         if self.remain() < 2 {
-            return None;
+            None
         } else {
             let raw_bytes = self.current()[..2].try_into();
             match raw_bytes {
                 Ok(bytes) => {
                     let result = u16::from_le_bytes(bytes);
-                    return Some(result);
+                    Some(result)
                 }
                 Err(_) => {
-                    return None;
+                    None
                 }
             }
         }
@@ -155,17 +155,17 @@ impl StreamCursor {
 
     pub fn get_i16(&mut self) -> Option<i16> {
         if self.remain() < 2 {
-            return None;
+            None
         } else {
             let raw_bytes = self.current()[..2].try_into();
             match raw_bytes {
                 Ok(bytes) => {
                     let result = i16::from_le_bytes(bytes);
                     self.pos_in_data += 2;
-                    return Some(result);
+                    Some(result)
                 }
                 Err(_) => {
-                    return None;
+                    None
                 }
             }
         }
@@ -173,17 +173,17 @@ impl StreamCursor {
 
     pub fn get_i32(&mut self) -> Option<i32> {
         if self.remain() < 4 {
-            return None;
+            None
         } else {
             let raw_bytes = self.current()[..4].try_into();
             match raw_bytes {
                 Ok(bytes) => {
                     let result = i32::from_le_bytes(bytes);
                     self.pos_in_data += 4;
-                    return Some(result);
+                    Some(result)
                 }
                 Err(_) => {
-                    return None;
+                    None
                 }
             }
         }
@@ -191,16 +191,16 @@ impl StreamCursor {
 
     pub fn peek_u32(&self) -> Option<u32> {
         if self.remain() < 4 {
-            return None;
+            None
         } else {
             let raw_bytes = self.current()[..4].try_into();
             match raw_bytes {
                 Ok(bytes) => {
                     let result = u32::from_le_bytes(bytes);
-                    return Some(result);
+                    Some(result)
                 }
                 Err(_) => {
-                    return None;
+                    None
                 }
             }
         }
@@ -216,16 +216,16 @@ impl StreamCursor {
 
     pub fn peek_i32(&self) -> Option<i32> {
         if self.remain() < 4 {
-            return None;
+            None
         } else {
             let raw_bytes = self.current()[..4].try_into();
             match raw_bytes {
                 Ok(bytes) => {
                     let result = i32::from_le_bytes(bytes);
-                    return Some(result);
+                    Some(result)
                 }
                 Err(_) => {
-                    return None;
+                    None
                 }
             }
         }
@@ -233,16 +233,16 @@ impl StreamCursor {
 
     pub fn peek_f32(&self) -> Option<f32> {
         if self.remain() < 4 {
-            return None;
+            None
         } else {
             let raw_bytes = self.current()[..4].try_into();
             match raw_bytes {
                 Ok(bytes) => {
                     let result = f32::from_le_bytes(bytes);
-                    return Some(result);
+                    Some(result)
                 }
                 Err(_) => {
-                    return None;
+                    None
                 }
             }
         }
@@ -271,7 +271,7 @@ impl StreamCursor {
 
     pub fn extract_str_l32(&mut self) -> Option<Vec<u8>> {
         let str_len = self.get_i32()? as usize;
-        if str_len == 0 {
+        if str_len == 0 || str_len > self.remain() {
             return None;
         }
         let raw_str: Vec<u8>;
@@ -286,7 +286,7 @@ impl StreamCursor {
 
     pub fn extract_str_l16(&mut self) -> Option<Vec<u8>> {
         let str_len = self.get_u16()? as usize;
-        if str_len == 0 {
+        if str_len == 0 || str_len > self.remain() {
             return None;
         }
         let raw_str: Vec<u8>;

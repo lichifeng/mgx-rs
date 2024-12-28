@@ -16,6 +16,7 @@ macro_rules! val {
 /// Store information of this game extracted from the recorded game. Most fields will be `None` if not present in the recorded game or exception occurs during parsing
 #[derive(Debug, Serialize, Default)]
 pub struct Record {
+    pub md5: Option<String>,
     pub filename: String,
     pub filesize: usize,
     pub lastmod: u64,

@@ -60,6 +60,7 @@ fn aoc10a_test() {
     let filename = "tests/recs/aoc10a_4v4_standard_1.mgx";
     let (mut rec, parser) = from_file(filename).unwrap();
     rec.translate("zh");
+    assert_eq!(rec.md5, Some("75b33de419109bbdff74aa4e51adf801".to_string()));
     assert_eq!(rec.ver, Some(Version::AoC10a));
     assert_eq!(rec.speed, Some("正常".to_string()));
     assert_eq!(rec.duration, 3235875);
