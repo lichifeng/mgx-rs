@@ -6,8 +6,8 @@ use std::slice::Iter;
 /// Source stream is not data stream.
 /// Data stream is a part of the source stream.   
 /// Opernations should be done on the data stream.
-pub struct StreamCursor {
-    pub src: Vec<u8>,
+pub struct StreamCursor<T: AsRef<[u8]>> {
+    pub src: T,
     pub pos_in_data: usize,
     pub offset: usize,
 }
@@ -40,9 +40,9 @@ impl<'a> BMByteSearchable for SearchableU8<'a> {
     }
 }
 
-impl StreamCursor {
+impl<T: AsRef<[u8]>> StreamCursor<T> {
     /// Offset is the start position of the data stream
-    pub fn new(src: Vec<u8>, offset: usize) -> Self {
+    pub fn new(src: T, offset: usize) -> Self {
         StreamCursor { src, pos_in_data: 0, offset }
     }
 
@@ -60,11 +60,11 @@ impl StreamCursor {
 
     /// Start from offset. Real data I need.
     pub fn data(&self) -> &[u8] {
-        &self.src[self.offset..]
+        &self.src.as_ref()[self.offset..]
     }
 
     pub fn current(&self) -> &[u8] {
-        &self.src[self.pos_in_data + self.offset..]
+        &self.src.as_ref()[self.pos_in_data + self.offset..]
     }
 
     pub fn seek(&mut self, pos_in_data: usize) -> &mut Self {
@@ -78,13 +78,13 @@ impl StreamCursor {
     }
 
     pub fn remain(&self) -> usize {
-        self.src.len() - self.pos_in_data - self.offset
+        self.src.as_ref().len() - self.pos_in_data - self.offset
     }
 
     /// `range` is the range in the actual data stream
     pub fn find(&self, needle: Vec<u8>, range: Range<usize>) -> Option<usize> {
         if let Some(bmb) = BMByte::from(&needle) {
-            let slice = SearchableU8::from(&self.src[range.start + self.offset..range.end + self.offset]);
+            let slice = SearchableU8::from(&self.src.as_ref()[range.start + self.offset..range.end + self.offset]);
             return bmb.find_first_in(slice).map(|pos| pos + range.start);
         }
         None
@@ -93,14 +93,14 @@ impl StreamCursor {
     /// `range` is the range in the actual data stream
     pub fn rfind(&self, needle: &Vec<u8>, range: Range<usize>) -> Option<usize> {
         if let Some(bmb) = BMByte::from(needle) {
-            let slice = SearchableU8::from(&self.src[range.start + self.offset..range.end + self.offset]);
+            let slice = SearchableU8::from(&self.src.as_ref()[range.start + self.offset..range.end + self.offset]);
             return bmb.rfind_first_in(slice).map(|pos| pos + range.start);
         }
         None
     }
 }
 
-impl StreamCursor {
+impl<T: AsRef<[u8]>> StreamCursor<T> {
     pub fn peek_u8(&self) -> Option<u8> {
         if self.current().is_empty() {
             None

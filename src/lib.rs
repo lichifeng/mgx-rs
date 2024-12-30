@@ -14,3 +14,4 @@ mod guess_winner;
 mod guid;
 mod render;
 mod translations;
+mod body_parser;

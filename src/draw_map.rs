@@ -6,7 +6,7 @@ use image::Rgb;
 use imageproc::drawing::draw_filled_circle_mut;
 
 /// Generate minimap from map data. Save it to `savename.png` 
-pub fn draw_map(rec: &Record, parser: &Parser, savename: &str) -> Result<()> {
+pub fn draw_map<T: AsRef<[u8]>>(rec: &Record, parser: &Parser<T>, savename: &str) -> Result<()> {
     let offset = match rec.debug.mappos {
         Some(pos) => pos,
         None => bail!("No offset"),

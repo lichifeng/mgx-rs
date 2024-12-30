@@ -217,6 +217,7 @@ fn next_chapter_test() {
     let filename = "tests/recs/next_chapter_1.mgx";
     let (rec, _) = from_file(filename).unwrap();    
     assert_eq!(rec.ver, Some(Version::AoC10c));
+    assert_eq!(rec.duration, 3179880);
 }
 
 #[test]
