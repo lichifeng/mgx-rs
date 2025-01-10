@@ -47,7 +47,7 @@ fn main() {
     // Get file metadata
     let metadata = fs::metadata(&path).unwrap();
     let filename = path.file_name().unwrap().to_string_lossy();
-    let last_modified = metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap().as_secs();
+    let last_modified = metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap().as_millis();
 
     let mut rec = mgx::Record::new(filename.into_owned(), buffer.len(), last_modified);
     let mut parser = mgx::Parser::new(buffer).unwrap();

@@ -19,7 +19,8 @@ pub struct Record {
     pub md5: Option<String>,
     pub filename: String,
     pub filesize: usize,
-    pub lastmod: u64,
+    /// In milliseconds since epoch
+    pub lastmod: u128,
     pub guid: Option<String>,
     pub verlog: Option<u32>,
     pub ver: Option<Version>,
@@ -179,7 +180,7 @@ pub enum Version {
 }
 
 impl Record {
-    pub fn new(filename: String, filesize: usize, lastmod: u64) -> Self {
+    pub fn new(filename: String, filesize: usize, lastmod: u128) -> Self {
         Record {
             filename,
             filesize,

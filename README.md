@@ -73,6 +73,8 @@ let mut record = Record::new(filename, buffer.len(), last_modified);
 // Parsing process won't start until `parse_to()` is called.
 let mut parser = Parser::new(buffer).unwrap();
 parser.parse_to(&mut record)?;
+record.convert_encoding();
+record.translate();
 ```
 
 ## References

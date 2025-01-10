@@ -19,7 +19,7 @@ pub fn from_file(file: &str) -> Result<(Record, Parser<Vec<u8>>)> {
         .to_str()
         .ok_or_else(|| anyhow!("Failed to convert file name to &str"))?
         .to_string();
-    let last_modified = metadata.modified()?.duration_since(UNIX_EPOCH)?.as_secs();
+    let last_modified = metadata.modified()?.duration_since(UNIX_EPOCH)?.as_millis();
 
     let mut record = Record::new(filename, buffer.len(), last_modified);
     let mut parser = Parser::<Vec<u8>>::new(buffer).unwrap();
