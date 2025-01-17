@@ -39,6 +39,9 @@ pub fn calc_guid(rec: &Record) -> Result<String> {
     }
 
     for p in rec.players.iter() {
+        if !p.isvalid() {
+            continue;
+        }
         hasher.update(p.slot.to_le_bytes());
         if let Some(name_raw) = p.name_raw.as_ref() {
             hasher.update(name_raw.as_slice());

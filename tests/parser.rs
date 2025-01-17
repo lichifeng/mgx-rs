@@ -10,7 +10,7 @@ fn aok_trial_test() {
     assert_eq!(rec.ver, Some(Version::AoKTrial));
     assert_eq!(rec.duration, 1933820);
     assert_eq!(rec.matchup, Some(vec![1, 1, 1]));
-    assert_eq!(rec.guid, Some("311015c86de5525959c0c50f0aba8e79".to_string()));
+    assert_eq!(rec.guid, Some("c346c0c9238f25317bbdb27246b4d56a".to_string()));
 
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
@@ -37,7 +37,7 @@ fn aok_test() {
     assert_eq!(rec.speed, Some("Fast".to_string()));
     assert_eq!(rec.duration, 9770100);
     assert_eq!(rec.matchup, Some(vec![4, 4]));
-    assert_eq!(rec.guid, Some("94ac726a334ab9d6f1e8e4ddc8ce5a6a".to_string()));
+    assert_eq!(rec.guid, Some("f94380bd153af62786c7ad2a0e01d114".to_string()));
 
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
@@ -65,16 +65,25 @@ fn aoc10a_test() {
     assert_eq!(rec.speed, Some("正常".to_string()));
     assert_eq!(rec.duration, 3235875);
     assert_eq!(rec.matchup, Some(vec![4, 4]));
-    assert_eq!(rec.guid, Some("6f5993c128590c318569669656d6886b".to_string()));
+    assert_eq!(rec.guid, Some("aead4c4da21c523f458be8e8399227e1".to_string()));
     assert_eq!(rec.chat.len(), 2);
     assert!(rec.haswinner);
 
     let filename2 = "tests/recs/aoc10a_4v4_standard_2.mgx";
     let (rec2, _) = from_file(filename2).unwrap();
-    assert_eq!(rec2.guid, Some("6f5993c128590c318569669656d6886b".to_string()));
+    assert_eq!(rec2.guid, Some("aead4c4da21c523f458be8e8399227e1".to_string()));
 
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
+
+    let guid = "ecd4756dc58f671707cfbe18bdd72f71".to_string();
+    let filename3 = "tests/recs/aoc10a_303_3p.mgx";
+    let (rec3, _) = from_file(filename3).unwrap();
+    assert_eq!(rec3.guid, Some(guid.clone()));
+
+    let filename4 = "tests/recs/aoc10a_303_5p.mgx";
+    let (rec4, _) = from_file(filename4).unwrap();
+    assert_eq!(rec4.guid, Some(guid));
 }
 
 #[test]
@@ -108,7 +117,7 @@ fn aoc10c_test() {
     assert_eq!(rec.speed, Some("Normal".to_string()));
     assert_eq!(rec.duration, 1710630);
     assert_eq!(rec.matchup, Some(vec![1, 1]));
-    assert_eq!(rec.guid, Some("8c1e850d8ebc3e4375f38e6d927bab22".to_string()));
+    assert_eq!(rec.guid, Some("1e3be847550bcc56008d952c2241e7ff".to_string()));
     assert!(rec.haswinner);
 
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
