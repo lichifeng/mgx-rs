@@ -16,6 +16,7 @@ macro_rules! val {
 /// Store information of this game extracted from the recorded game. Most fields will be `None` if not present in the recorded game or exception occurs during parsing
 #[derive(Debug, Serialize, Default)]
 pub struct Record {
+    pub parser: String,
     pub md5: Option<String>,
     pub filename: String,
     pub filesize: usize,
@@ -183,6 +184,10 @@ pub enum Version {
 impl Record {
     pub fn new(filename: String, filesize: usize, lastmod: u128) -> Self {
         Record {
+            parser: format!("mgx-rs {}-{}", 
+                env!("CARGO_PKG_VERSION"), 
+                if cfg!(debug_assertions) { "debug" } else { "release" }
+            ),
             filename,
             filesize,
             lastmod,
