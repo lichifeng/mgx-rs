@@ -74,6 +74,7 @@ pub struct Record {
     pub lockdiplomacy: Option<bool>,
     pub haswinner: bool,
     pub matchup: Option<Vec<usize>>,
+    pub teams: Vec<Vec<i32>>,
     pub players: [Player; 9],
     /// Debug data used by the parser. Strip this out in output json.
     #[serde(skip)]

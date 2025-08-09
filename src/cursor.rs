@@ -2,6 +2,7 @@ use boyer_moore_magiclen::BMByte;
 use boyer_moore_magiclen::BMByteSearchable;
 use std::ops::Range;
 use std::slice::Iter;
+use std::cmp::min_by;
 
 /// Source stream is not data stream.
 /// Data stream is a part of the source stream.   
@@ -304,7 +305,7 @@ impl<T: AsRef<[u8]>> StreamCursor<T> {
     pub fn print_hex(&self, len: usize) {
         let mut i = 0;
         println!("Bytes of range [{}, {}]:", len, self.pos_in_data);
-        while i < len {
+        while i < min_by(len, self.remain(), |a, b| a.cmp(b)) {
             print!("{:02x} ", self.data()[self.pos_in_data + i]);
             i += 1;
         }

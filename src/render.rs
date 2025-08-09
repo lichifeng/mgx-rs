@@ -65,7 +65,7 @@ impl Record {
             match p.name_raw.as_ref() {
                 Some(x) => {
                     let (decoded, _, _) = encoding.decode(x);
-                    p.name = Some(decoded.into_owned());
+                    p.name = Some(clean_player_name(decoded.into_owned()));
                 }
                 None => (),
             }
@@ -86,6 +86,25 @@ impl Record {
         self.convert_encoding();
         serde_json::to_string(self).map_err(Into::into)
     }
+}
+
+fn clean_player_name(name: String) -> String {
+    // Pattern: -beg[hex_digits]end-[actual_name]
+    if name.starts_with("-beg") && name.contains("end-") {
+        if let Some(end_pos) = name.find("end-") {
+            let hex_part = &name[4..end_pos]; // Skip "-beg" prefix
+            // Verify hex_part contains only hex digits
+            if hex_part.chars().all(|c| c.is_ascii_hexdigit()) {
+                let actual_name_start = end_pos + 4; // Skip "end-"
+                if actual_name_start < name.len() {
+                    return name[actual_name_start..].to_string();
+                }
+            }
+        }
+    }
+
+    // If no pattern found, return original name
+    name
 }
 
 /// Translates a raw value to a human-readable string

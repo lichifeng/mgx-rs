@@ -204,6 +204,9 @@ impl<T: AsRef<[u8]>> Parser<T> {
         h.mov(27 * num_particles as isize + 4);
 
         r.debug.initpos = h.tell();
+        if r.ver == Some(Version::AoKTrial) {
+            r.debug.initpos += 4;
+        }
 
         // Find trigger
         let needle = vec![0x9a, 0x99, 0x99, 0x99, 0x99, 0x99, 0xf9, 0x3f];
@@ -387,13 +390,47 @@ impl<T: AsRef<[u8]>> Parser<T> {
                     r.debug.playerinitpos_by_idx[val!(r.players[i].index) as usize] = pos;
                     h.seek(val!(pos));
                     easy_skip_start = h.tell();
+                } else {
+                    // print a hint only in debug mode
+                    #[cfg(debug_assertions)]
+                    {
+                        println!("Player {} not found, needle: {:02x?}", i, init_search_needles.get(i).cloned());
+                    }
                 }
             }
         }
 
+        // Analyze diplomacy
+        let mut playerpos = r.debug.playerinitpos_by_idx.clone();
+        let totalplayers = val!(r.totalplayers) as usize;
+        for i in 1..9 {
+            if playerpos[i].is_some() && r.players[i].isvalid() {
+                let mut team_members = vec![val!(r.players[i].index)];
+                let pos_my_diplomacy = val!(playerpos[i]) - (5 + 36);
+                let pos_diplomacy = pos_my_diplomacy - totalplayers; // first one is GAIA
+                for j in (i + 1)..totalplayers {
+                    h.seek(pos_diplomacy + j);
+                    let other_to_me = val!(h.get_u8()) as i32;
+                    h.seek(pos_my_diplomacy + j * 4);
+                    let me_to_other = val!(h.get_i32());
+                    // println!("Player {} to {}: {} -> {}", i, j, other_to_me, me_to_other);
+                    if other_to_me == 0 && me_to_other == 2 {
+                        team_members.push(j as i32);
+                        playerpos[j] = None; // This player don't need to be checked again
+                    }
+                }
+                r.teams.push(team_members);
+            }
+        }
+        // create a var team_count, contains the number of players in each team order by asc
+        let mut team_count: Vec<usize> = r.teams.iter().map(|t| t.len()).collect();
+        team_count.sort();
+        r.matchup = Some(team_count);
+
         // Init data
         for i in 0..9 {
             let pos_by_idx = r.debug.playerinitpos_by_idx[val!(r.players[i].index) as usize];
+            // Which is put before '&&' makes a difference
             if r.players[i].isvalid() && pos_by_idx.is_some() {
                 h.seek(val!(pos_by_idx));
                 let mainop_name = h.extract_str_l16();

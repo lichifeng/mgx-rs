@@ -7,10 +7,10 @@ fn aok_trial_test() {
     let filename = "tests/recs/aok_trial.mgl";
     let (rec, parser) = from_file(filename).unwrap();
     
+    assert_eq!(rec.guid, Some("6603ada367f5c73b9179960c955786ee".to_string()));
     assert_eq!(rec.ver, Some(Version::AoKTrial));
     assert_eq!(rec.duration, 1933820);
     assert_eq!(rec.matchup, Some(vec![1, 1, 1]));
-    assert_eq!(rec.guid, Some("c346c0c9238f25317bbdb27246b4d56a".to_string()));
 
     draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
     std::fs::remove_file(format!("{}.png", filename)).unwrap();
@@ -235,4 +235,20 @@ fn extra_bytes_after_header_test() {
     let filename = "tests/recs/extra_bytes_after_compressed_header.mgx";
     let (rec, _) = from_file(filename).unwrap();
     assert_eq!(rec.ver, Some(Version::AoC10a));
+}
+
+#[test]
+fn matchup_detection_test() {
+    let filename = "tests/recs/aoc10a_team_with_spectators.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert_eq!(rec.matchup, Some(vec![1, 1]));
+
+    let filename = "tests/recs/matchup_1v2v2.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert_eq!(rec.matchup, Some(vec![1, 2, 2]));
+
+    let filename = "tests/recs/aoc10a_1v1_with_winner.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert_eq!(rec.matchup, Some(vec![1, 1]));
+    assert!(rec.haswinner);
 }
