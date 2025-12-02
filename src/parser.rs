@@ -404,9 +404,13 @@ impl<T: AsRef<[u8]>> Parser<T> {
         let mut playerpos = r.debug.playerinitpos_by_idx.clone();
         let totalplayers = val!(r.totalplayers) as usize;
         for i in 1..9 {
-            if playerpos[i].is_some() && r.players[i].isvalid() {
-                let mut team_members = vec![val!(r.players[i].index)];
-                let pos_my_diplomacy = val!(playerpos[i]) - (5 + 36);
+            if r.players[i].index.is_none() {
+                continue;
+            }
+            let idx = val!(r.players[i].index) as usize;
+            if playerpos[idx].is_some() && r.players[i].isvalid() {
+                let mut team_members = vec![idx as i32];
+                let pos_my_diplomacy = val!(playerpos[idx]) - (5 + 36);
                 let pos_diplomacy = pos_my_diplomacy - totalplayers; // first one is GAIA
                 for j in (i + 1)..totalplayers {
                     h.seek(pos_diplomacy + j);
@@ -420,6 +424,7 @@ impl<T: AsRef<[u8]>> Parser<T> {
                     }
                 }
                 r.teams.push(team_members);
+                playerpos[idx] = None; // This player don't need to be checked again
             }
         }
         // create a var team_count, contains the number of players in each team order by asc

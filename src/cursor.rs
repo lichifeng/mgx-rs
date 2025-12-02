@@ -36,7 +36,7 @@ impl<'a> BMByteSearchable for SearchableU8<'a> {
     }
 
     #[inline]
-    fn iter(&self) -> Iter<u8> {
+    fn iter(&self) -> Iter<'_, u8> {
         <[u8]>::iter(&self.value)
     }
 }
