@@ -49,41 +49,42 @@ pub fn parse_body<T: AsRef<[u8]>>(b: &mut StreamCursor<T>, r: &mut Record) -> Re
                     }
                     COMMAND_RESEARCH => {
                         b.mov(7);
-                        let slot = val!(b.get_i8());
-                        if slot < 0 || slot > 8 || !r.players[slot as usize].isvalid() {
-                            ()
-                        }
+                        let idx = val!(b.get_i8());
                         b.mov(1);
                         let techid = val!(b.get_i16());
-                        match techid {
-                            101 => r.players[slot as usize].feudaltime = Some(r.duration + 130000),
-                            102 => {
-                                if let Some(civ_raw) = r.players[slot as usize].civ_raw {
-                                    r.players[slot as usize].castletime = Some(
-                                        r.duration
-                                            + match civ_raw {
-                                                8 => 160000 / 1.10 as u32,
-                                                _ => 160000,
-                                            },
-                                    )
-                                } else {
-                                    r.players[slot as usize].castletime = Some(r.duration + 160000)
+                        
+                        // Find the slot by matching player index
+                        if let Some(slot) = r.players.iter().position(|p| p.index == Some(idx as i32)) {
+                            match techid {
+                                101 => r.players[slot].feudaltime = Some(r.duration + 130000),
+                                102 => {
+                                    if let Some(civ_raw) = r.players[slot].civ_raw {
+                                        r.players[slot].castletime = Some(
+                                            r.duration
+                                                + match civ_raw {
+                                                    8 => 160000 / 1.10 as u32,
+                                                    _ => 160000,
+                                                },
+                                        )
+                                    } else {
+                                        r.players[slot].castletime = Some(r.duration + 160000)
+                                    }
                                 }
-                            }
-                            103 => {
-                                if let Some(civ_raw) = r.players[slot as usize].civ_raw {
-                                    r.players[slot as usize].imperialtime = Some(
-                                        r.duration
-                                            + match civ_raw {
-                                                8 => 190000 / 1.10 as u32,
-                                                _ => 190000,
-                                            },
-                                    )
-                                } else {
-                                    r.players[slot as usize].imperialtime = Some(r.duration + 190000)
+                                103 => {
+                                    if let Some(civ_raw) = r.players[slot].civ_raw {
+                                        r.players[slot].imperialtime = Some(
+                                            r.duration
+                                                + match civ_raw {
+                                                    8 => 190000 / 1.10 as u32,
+                                                    _ => 190000,
+                                                },
+                                        )
+                                    } else {
+                                        r.players[slot].imperialtime = Some(r.duration + 190000)
+                                    }
                                 }
+                                _ => {}
                             }
-                            _ => {}
                         }
                     }
                     COMMAND_TRAIN => {
