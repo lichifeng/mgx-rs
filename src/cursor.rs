@@ -2,6 +2,8 @@ use boyer_moore_magiclen::BMByte;
 use boyer_moore_magiclen::BMByteSearchable;
 use std::ops::Range;
 use std::slice::Iter;
+
+#[cfg(debug_assertions)]
 use std::cmp::min_by;
 
 /// Source stream is not data stream.

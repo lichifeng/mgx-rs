@@ -216,8 +216,18 @@ fn de63_test() {
 fn headerlen_missing_test() {
     //! This record has no header length(0x00 0x00 0x00 0x00)
     let filename = "tests/recs/headerlen_is_missing.mgx";
-    let (rec, _) = from_file(filename).unwrap();    
+    let (rec, _) = from_file(filename).unwrap();
     assert_eq!(rec.ver, Some(Version::AoC10a));
+}
+
+#[test]
+fn resign_info_test() {
+    //! This record has winner info.
+    let filename = "tests/recs/aoc10a_3v3_haswinner_resign_test.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert!(rec.haswinner);
+    assert!(rec.players[2].resigned.is_some() && rec.players[4].resigned.is_some() && rec.players[7].resigned.is_some());
+    assert!(rec.players[1].winner.unwrap() && rec.players[1].winner.unwrap() && rec.players[5].winner.unwrap() && rec.players[6].winner.unwrap());
 }
 
 #[test]

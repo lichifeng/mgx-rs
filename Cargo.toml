@@ -1,6 +1,6 @@
 [package]
 name = "mgx"
-version = "0.1.11"
+version = "0.1.12"
 authors = ["lichifeng <lichifeng@qq.com>"]
 edition = "2021"
 description = "A parser for Age of Empires II recorded games."
@@ -13,9 +13,12 @@ keywords = ["age-of-empires", "aoc", "game-replay"]
 categories = ["games", "parsing"]
 exclude = ["tests/*", ".vscode/*", "utils/*"]
 
+[lib]
+doctest = false
+
 [dependencies]
 anyhow = "1.0"
-boyer-moore-magiclen = "0.2.20"
+boyer-moore-magiclen = "0.2"
 chksum-hash-md5 = "0.0.1"
 clap = { version = "4.5", features = ["derive"] }
 encoding_rs = "0.8.35"

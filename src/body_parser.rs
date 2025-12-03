@@ -40,8 +40,11 @@ pub fn parse_body<T: AsRef<[u8]>>(b: &mut StreamCursor<T>, r: &mut Record) -> Re
                 let cmd = val!(b.get_u8());
                 match cmd {
                     COMMAND_RESIGN => {
-                        let slot = val!(b.get_i8());
+                        // In https://github.com/stefan-kolb/aoc-mgx-format/blob/master/spec/body/actions/0b-resign.md,
+                        // player index and slot have wrong order. The first byte is index, second byte is player slot.
+                        // https://github.com/goto-bus-stop/recanalyst/blob/master/src/Analyzers/BodyAnalyzer.php is right on this.
                         b.mov(1);
+                        let slot = val!(b.get_i8());
                         if slot >= 0 && slot < 9 && r.players[slot as usize].isvalid() {
                             r.players[slot as usize].resigned = Some(r.duration);
                             r.players[slot as usize].disconnected = b.get_bool(4);
