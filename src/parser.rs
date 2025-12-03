@@ -412,12 +412,12 @@ impl<T: AsRef<[u8]>> Parser<T> {
                 let mut team_members = vec![idx as i32];
                 let pos_my_diplomacy = val!(playerpos[idx]) - (5 + 36);
                 let pos_diplomacy = pos_my_diplomacy - totalplayers; // first one is GAIA
-                for j in (i + 1)..totalplayers {
+                for j in (idx + 1)..totalplayers {
                     h.seek(pos_diplomacy + j);
                     let other_to_me = val!(h.get_u8()) as i32;
                     h.seek(pos_my_diplomacy + j * 4);
                     let me_to_other = val!(h.get_i32());
-                    // println!("Player {} to {}: {} -> {}", i, j, other_to_me, me_to_other);
+                    // println!("Player slot#{} to index#{}: {} -> {}", i, j, other_to_me, me_to_other);
                     if other_to_me == 0 && me_to_other == 2 {
                         team_members.push(j as i32);
                         playerpos[j] = None; // This player don't need to be checked again

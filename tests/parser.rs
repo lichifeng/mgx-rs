@@ -225,6 +225,7 @@ fn resign_info_test() {
     //! This record has winner info.
     let filename = "tests/recs/aoc10a_3v3_haswinner_resign_test.mgx";
     let (rec, _) = from_file(filename).unwrap();
+    assert_eq!(rec.matchup, Some(vec![3, 3]));
     assert!(rec.haswinner);
     assert!(rec.players[2].resigned.is_some() && rec.players[4].resigned.is_some() && rec.players[7].resigned.is_some());
     assert!(rec.players[1].winner.unwrap() && rec.players[1].winner.unwrap() && rec.players[5].winner.unwrap() && rec.players[6].winner.unwrap());
@@ -260,5 +261,10 @@ fn matchup_detection_test() {
     let filename = "tests/recs/aoc10a_1v1_with_winner.mgx";
     let (rec, _) = from_file(filename).unwrap();
     assert_eq!(rec.matchup, Some(vec![1, 1]));
+    assert!(rec.haswinner);
+
+    let filename = "tests/recs/aoc10a_3v3_with_spectator.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert_eq!(rec.matchup, Some(vec![3, 3]));
     assert!(rec.haswinner);
 }
