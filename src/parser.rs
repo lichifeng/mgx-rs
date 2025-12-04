@@ -407,17 +407,24 @@ impl<T: AsRef<[u8]>> Parser<T> {
             if r.players[i].index.is_none() {
                 continue;
             }
+            // println!("Current playerpos(loop i: {}): {:?}", i, playerpos);
             let idx = val!(r.players[i].index) as usize;
             if playerpos[idx].is_some() && r.players[i].isvalid() {
                 let mut team_members = vec![idx as i32];
                 let pos_my_diplomacy = val!(playerpos[idx]) - (5 + 36);
                 let pos_diplomacy = pos_my_diplomacy - totalplayers; // first one is GAIA
+                // println!("  my slot: {}, my idx: {}, totalplayers: {}", i, idx, totalplayers);
                 for j in (idx + 1)..totalplayers {
+                    // print!("   checking with idx: {}", j);
+                    if playerpos[j].is_none() {
+                        // println!("    already processed, skip");
+                        continue;
+                    }
                     h.seek(pos_diplomacy + j);
                     let other_to_me = val!(h.get_u8()) as i32;
                     h.seek(pos_my_diplomacy + j * 4);
                     let me_to_other = val!(h.get_i32());
-                    // println!("Player slot#{} to index#{}: {} -> {}", i, j, other_to_me, me_to_other);
+                    // println!("    ->: {}, <-: {}", other_to_me, me_to_other);
                     if other_to_me == 0 && me_to_other == 2 {
                         team_members.push(j as i32);
                         playerpos[j] = None; // This player don't need to be checked again

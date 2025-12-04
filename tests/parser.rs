@@ -267,4 +267,8 @@ fn matchup_detection_test() {
     let (rec, _) = from_file(filename).unwrap();
     assert_eq!(rec.matchup, Some(vec![3, 3]));
     assert!(rec.haswinner);
+
+    let filename = "tests/recs/aoc10a_1v1v4.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert_eq!(rec.matchup, Some(vec![1, 1, 4]));
 }
