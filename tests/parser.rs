@@ -272,3 +272,23 @@ fn matchup_detection_test() {
     let (rec, _) = from_file(filename).unwrap();
     assert_eq!(rec.matchup, Some(vec![1, 1, 4]));
 }
+
+#[test]
+fn winner_detection_test() {
+    let filename = "tests/recs/aoc10a_not_all_resigned.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert!(rec.haswinner);
+    assert_eq!(rec.matchup, Some(vec![4, 4]));
+
+    // No one resigned, means the recorder quit first
+    let filename = "tests/recs/aoc10a_4v4_no_resigned.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert!(rec.haswinner);
+    assert_eq!(rec.matchup, Some(vec![4, 4]));
+    assert!(rec.fogofwar.unwrap());
+
+    let filename = "tests/recs/aoc10a_3v3_no_winner.mgx";
+    let (rec, _) = from_file(filename).unwrap();
+    assert!(!rec.haswinner);
+    assert_eq!(rec.matchup, Some(vec![3, 3]));
+}

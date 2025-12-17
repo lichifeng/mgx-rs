@@ -42,7 +42,7 @@ pub struct Record {
     pub revealmap: Option<String>,
     pub mapx: Option<i32>,
     pub mapy: Option<i32>,
-    pub nofog: Option<bool>,
+    pub fogofwar: Option<bool>,
     pub instantbuild: Option<bool>,
     pub enablecheats: Option<bool>,
     pub restoretime: Option<u32>,
@@ -184,8 +184,9 @@ pub enum Version {
 impl Record {
     pub fn new(filename: String, filesize: usize, lastmod: u128) -> Self {
         Record {
-            parser: format!("mgx-rs {}-{}", 
-                env!("CARGO_PKG_VERSION"), 
+            parser: format!(
+                "mgx-rs {}-{}",
+                env!("CARGO_PKG_VERSION"),
                 if cfg!(debug_assertions) { "debug" } else { "release" }
             ),
             filename,

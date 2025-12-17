@@ -10,50 +10,48 @@ pub fn guess(rec: &mut Record) -> Result<()> {
         return Ok(());
     }
 
+    if rec.instantbuild == Some(true) || rec.enablecheats == Some(true) {
+        return Ok(());
+    }
+
     // if not 2-sided game or not a fair game, ignore
     if rec.teams.len() != 2 || rec.teams[0].len() != rec.teams[1].len() {
         return Ok(());
     }
 
-    let mut all_resigned_0 = true;
-    let mut all_resigned_1 = true;
-    // test resigned info in the first team
-    for idx in &rec.teams[0] {
-        if !all_resigned_0 {
-            break;
+    let mut resigned: Vec<i32> = vec![];
+    rec.players.iter().for_each(|p| {
+        if !p.isvalid() {
+            return;
         }
-        for p in &rec.players {
-            if p.index == Some(*idx) && p.resigned.is_none() {
-                all_resigned_0 = false;
-                break;
+        
+        if let Some(idx) = p.index {
+            if let Some(resign_time) = p.resigned {
+                if resign_time > 0 {
+                    resigned.push(idx);
+                }
             }
         }
-    }
-    // test resigned info in the second team
-    for idx in &rec.teams[1] {
-        if !all_resigned_1 {
-            break;
-        }
-        for p in &rec.players {
-            if p.index == Some(*idx) && p.resigned.is_none() {
-                all_resigned_1 = false;
-                break;
-            }
+    });
+
+    // If no one has resigned data, usually means the recorder is the only one who resigned
+    if resigned.is_empty() {
+        if let Some(pov) = rec.recorder {
+            resigned.push(pov as i32);
+        } else {
+            return Ok(());
         }
     }
 
-    if all_resigned_0 == all_resigned_1 {
-        rec.haswinner = false;
+    let winner_team: &Vec<i32>;
+    if is_subset(&resigned, &rec.teams[0]) {
+        winner_team = &rec.teams[1];
+    } else if is_subset(&resigned, &rec.teams[1]) {
+        winner_team = &rec.teams[0];
+    } else {
+        // Cannot determine winner
         return Ok(());
-    } else {
-        rec.haswinner = true;
     }
-
-    let winner_team = if all_resigned_0 {
-        &rec.teams[1]
-    } else {
-        &rec.teams[0]
-    };
 
     rec.players.iter_mut().for_each(|p| {
         if p.index.as_ref().map_or(false, |idx| winner_team.contains(idx)) {
@@ -63,5 +61,17 @@ pub fn guess(rec: &mut Record) -> Result<()> {
         }
     });
 
+    rec.haswinner = true;
+
     Ok(())
+}
+
+// Test if a Vec<i32> is a subset of another Vec<i32>
+fn is_subset(sub: &Vec<i32>, sup: &Vec<i32>) -> bool {
+    for item in sub {
+        if !sup.contains(item) {
+            return false;
+        }
+    }
+    true
 }

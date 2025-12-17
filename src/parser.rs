@@ -183,8 +183,8 @@ impl<T: AsRef<[u8]>> Parser<T> {
             let num_floats = val!(h.get_i32());
             h.mov(num_floats as isize * 4 + 4);
         }
-        r.nofog = h.get_bool(1);
         h.mov(1);
+        r.fogofwar = h.get_bool(1);
 
         r.debug.mappos = Some(h.tell());
 
@@ -413,7 +413,7 @@ impl<T: AsRef<[u8]>> Parser<T> {
                 let mut team_members = vec![idx as i32];
                 let pos_my_diplomacy = val!(playerpos[idx]) - (5 + 36);
                 let pos_diplomacy = pos_my_diplomacy - totalplayers; // first one is GAIA
-                // println!("  my slot: {}, my idx: {}, totalplayers: {}", i, idx, totalplayers);
+                                                                     // println!("  my slot: {}, my idx: {}, totalplayers: {}", i, idx, totalplayers);
                 for j in (idx + 1)..totalplayers {
                     // print!("   checking with idx: {}", j);
                     if playerpos[j].is_none() {
