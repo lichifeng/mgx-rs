@@ -37,7 +37,7 @@ fn main() {
     let cli = Cli::parse();
 
     let path = Path::new(cli.record_path.to_str().unwrap());
-    let mut file = File::open(&path).unwrap_or_else(|e| {
+    let mut file = File::open(path).unwrap_or_else(|e| {
         eprintln!("Error opening {}: {}", path.to_string_lossy(), e);
         std::process::exit(1);
     });
@@ -45,7 +45,7 @@ fn main() {
     file.read_to_end(&mut buffer).unwrap();
 
     // Get file metadata
-    let metadata = fs::metadata(&path).unwrap();
+    let metadata = fs::metadata(path).unwrap();
     let filename = path.file_name().unwrap().to_string_lossy();
     let last_modified = metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap().as_millis();
 

@@ -26,7 +26,7 @@ pub fn draw_map<T: AsRef<[u8]>>(rec: &Record, parser: &Parser<T>, savename: &str
 
     let mut img = image::RgbImage::new(src_width, src_height);
 
-    let is_legacy = *rawdata.get(0).unwrap() != 0xff;
+    let is_legacy = *rawdata.first().unwrap() != 0xff;
     let (terrain_offset, elevation_offset, struct_len) = if is_legacy { (0, 1, 2) } else { (1, 2, 4) };
 
     for (x, y, pixel) in img.enumerate_pixels_mut() {

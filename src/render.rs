@@ -53,31 +53,22 @@ impl Record {
         let encoding_name = self.detect_encoding().unwrap_or_else(|| "GBK".to_string());
         let encoding = Encoding::for_label(encoding_name.as_bytes()).unwrap_or(encoding_rs::GBK);
 
-        match self.instructions_raw.as_ref() {
-            Some(x) => {
-                let (decoded, _, _) = encoding.decode(x);
-                self.instructions = Some(decoded.into_owned());
-            }
-            None => (),
+        if let Some(x) = self.instructions_raw.as_ref() {
+            let (decoded, _, _) = encoding.decode(x);
+            self.instructions = Some(decoded.into_owned());
         }
 
         for p in &mut self.players {
-            match p.name_raw.as_ref() {
-                Some(x) => {
-                    let (decoded, _, _) = encoding.decode(x);
-                    p.name = Some(clean_player_name(decoded.into_owned()));
-                }
-                None => (),
+            if let Some(x) = p.name_raw.as_ref() {
+                let (decoded, _, _) = encoding.decode(x);
+                p.name = Some(clean_player_name(decoded.into_owned()));
             }
         }
 
         for c in &mut self.chat {
-            match c.content_raw.as_ref() {
-                Some(x) => {
-                    let (decoded, _, _) = encoding.decode(x);
-                    c.content = Some(decoded.into_owned());
-                }
-                None => (),
+            if let Some(x) = c.content_raw.as_ref() {
+                let (decoded, _, _) = encoding.decode(x);
+                c.content = Some(decoded.into_owned());
             }
         }
     }
@@ -93,7 +84,7 @@ fn clean_player_name(name: String) -> String {
     if name.starts_with("-beg") && name.contains("end-") {
         if let Some(end_pos) = name.find("end-") {
             let hex_part = &name[4..end_pos]; // Skip "-beg" prefix
-            // Verify hex_part contains only hex digits
+                                              // Verify hex_part contains only hex digits
             if hex_part.chars().all(|c| c.is_ascii_hexdigit()) {
                 let actual_name_start = end_pos + 4; // Skip "end-"
                 if actual_name_start < name.len() {

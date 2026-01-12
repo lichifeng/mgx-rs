@@ -6,7 +6,7 @@ use anyhow::Result;
 /// If all players of PoV's team have resigned and the other side has survivors, the other side is considered to have won.
 /// Matchup is generated here, too.
 pub fn guess(rec: &mut Record) -> Result<()> {
-    if !rec.matchup.is_some() {
+    if rec.matchup.is_none() {
         return Ok(());
     }
 
@@ -24,7 +24,7 @@ pub fn guess(rec: &mut Record) -> Result<()> {
         if !p.isvalid() {
             return;
         }
-        
+
         if let Some(idx) = p.index {
             if let Some(resign_time) = p.resigned {
                 if resign_time > 0 {
@@ -54,7 +54,7 @@ pub fn guess(rec: &mut Record) -> Result<()> {
     }
 
     rec.players.iter_mut().for_each(|p| {
-        if p.index.as_ref().map_or(false, |idx| winner_team.contains(idx)) {
+        if p.index.as_ref().is_some_and(|idx| winner_team.contains(idx)) {
             p.winner = Some(true);
         } else {
             p.winner = Some(false);
@@ -67,11 +67,6 @@ pub fn guess(rec: &mut Record) -> Result<()> {
 }
 
 // Test if a Vec<i32> is a subset of another Vec<i32>
-fn is_subset(sub: &Vec<i32>, sup: &Vec<i32>) -> bool {
-    for item in sub {
-        if !sup.contains(item) {
-            return false;
-        }
-    }
-    true
+fn is_subset(sub: &[i32], sup: &[i32]) -> bool {
+    sub.iter().all(|item| sup.contains(item))
 }

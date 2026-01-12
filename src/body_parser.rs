@@ -45,7 +45,7 @@ pub fn parse_body<T: AsRef<[u8]>>(b: &mut StreamCursor<T>, r: &mut Record) -> Re
                         // https://github.com/goto-bus-stop/recanalyst/blob/master/src/Analyzers/BodyAnalyzer.php is right on this.
                         b.mov(1);
                         let slot = val!(b.get_i8());
-                        if slot >= 0 && slot < 9 && r.players[slot as usize].isvalid() {
+                        if (0..9).contains(&slot) && r.players[slot as usize].isvalid() {
                             r.players[slot as usize].resigned = Some(r.duration);
                             r.players[slot as usize].disconnected = b.get_bool(4);
                         }
@@ -129,7 +129,7 @@ pub fn parse_body<T: AsRef<[u8]>>(b: &mut StreamCursor<T>, r: &mut Record) -> Re
             }
             OP_SYNC => {
                 let time_delta = val!(b.get_i32());
-                if time_delta < 0 || time_delta > 1000 {
+                if !(0..=1000).contains(&time_delta) {
                     #[cfg(debug_assertions)]
                     bail!("Unusual time delta: {} @bodypos: {}", time_delta, b.tell() - 4);
                     #[allow(unreachable_code)]
@@ -161,7 +161,7 @@ pub fn parse_body<T: AsRef<[u8]>>(b: &mut StreamCursor<T>, r: &mut Record) -> Re
                         && message.ends_with(b"--")
                         && message[3] == b'-'
                         && message[4] == b'-'
-                        || message.len() == 0
+                        || message.is_empty()
                     {
                         continue;
                     }

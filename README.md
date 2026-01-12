@@ -9,7 +9,7 @@
 
 **Note:** `mgx` doesn't support game records of HD/DE versions.
 
-## Usage(as a binary)
+## Usage (as a binary)
 ```text
 # mgx --help
 
@@ -21,20 +21,20 @@ Arguments:
   <RECORD_PATH>  Path to the record file. Only AoK(.mgl)/AoC(.mgx)/UP1.5(.mgz) are supported
 
 Options:
-  -m <MAP>               Generate a map image as a .png image. Rotated 45° counterclockwise and change height to 50% to get a in-game look
+  -m <MAP>               Generate a map image as a PNG file. Not rotated.
   -j, --json             Dump game info into a JSON string
-      --zh               Use Chinese language for output
+      --zh               Use Chinese translations for output
       --header <HEADER>  Dump header section to specified file
       --body <BODY>      Dump body section to specified file
   -h, --help             Print help
   -V, --version          Print version
 ```
 
-## Usage(as a library)
+## Usage (as a library)
 
-> Parse from a buffer if you need more control over the parsing.   
-> Create a `Record` manually and pass it to a `Parser`. Extracted data will persists in the `Record` even if the `Parser` returns an error.
-> `mgx::from_file()` will result in nothing if any error occurs.
+> Parse from a buffer if you need more control over the parsing.
+> Create a `Record` manually and pass it to a `Parser`. Extracted data will persist in the `Record` even if the `Parser` returns an error.
+> `mgx::from_file()` will return nothing if any error occurs.
 
 ### Parse a file directly
 ```rust
@@ -44,20 +44,19 @@ let (mut rec, parser) = mgx::from_file(filename).unwrap();
 // See src/record.rs for more available fields
 println!(" Version: {:?}", rec.ver.unwrap());
 
-// Generate a map image as a .png image.   
-// Rotated 45° counterclockwise and change height to 50% to get a in-game look.
+// Generate a map image as a PNG file.
 mgx::draw_map(&rec, &parser, &format!("{}.png", filename)).unwrap();
 
-// Encoding of in game strings are guessed from instructions, may not be correct. `GBK` is used as a fallback.
+// Encoding of in-game strings is guessed from instructions and may not be correct. `GBK` is used as a fallback.
 println!("Encoding: {:?}", rec.detect_encoding().unwrap());
 
 // .convert_encoding() calls .detect_encoding() first.
 rec.convert_encoding();
 
-// Some info like civilizations are stored as numeric raw data, `.translate()` converts these to human-readable strings. Only "zh"/"en" are supported now.
+// Some info like civilizations is stored as numeric raw data. `.translate()` converts these to human-readable strings. Only "zh" and "en" are supported now.
 rec.translate();
 
-// Dump comprehensive info into a JSON string. Check `null` values before using them.   
+// Dump comprehensive info into a JSON string. Check `null` values before using them.
 // This method calls .convert_encoding() first.
 println!("{:?}", rec.dump_json().unwrap());
 ```

@@ -29,7 +29,7 @@ impl<'a> From<&'a [u8]> for SearchableU8<'a> {
 impl<'a> BMByteSearchable for SearchableU8<'a> {
     #[inline]
     fn len(&self) -> usize {
-        <[u8]>::len(&self.value)
+        self.value.len()
     }
 
     #[inline]
@@ -39,7 +39,7 @@ impl<'a> BMByteSearchable for SearchableU8<'a> {
 
     #[inline]
     fn iter(&self) -> Iter<'_, u8> {
-        <[u8]>::iter(&self.value)
+        self.value.iter()
     }
 }
 
@@ -277,11 +277,10 @@ impl<T: AsRef<[u8]>> StreamCursor<T> {
         if str_len == 0 || str_len > self.remain() {
             return None;
         }
-        let raw_str: Vec<u8>;
-        if self.current()[str_len - 1] == 0 {
-            raw_str = self.current()[0..str_len - 1].to_vec();
+        let raw_str: Vec<u8> = if self.current()[str_len - 1] == 0 {
+            self.current()[0..str_len - 1].to_vec()
         } else {
-            raw_str = self.current()[0..str_len].to_vec();
+            self.current()[0..str_len].to_vec()
         };
         self.mov(str_len as isize);
         Some(raw_str)
@@ -292,11 +291,10 @@ impl<T: AsRef<[u8]>> StreamCursor<T> {
         if str_len == 0 || str_len > self.remain() {
             return None;
         }
-        let raw_str: Vec<u8>;
-        if self.current()[str_len - 1] == 0 {
-            raw_str = self.current()[0..str_len - 1].to_vec();
+        let raw_str: Vec<u8> = if self.current()[str_len - 1] == 0 {
+            self.current()[0..str_len - 1].to_vec()
         } else {
-            raw_str = self.current()[0..str_len].to_vec();
+            self.current()[0..str_len].to_vec()
         };
         self.mov(str_len as isize);
         Some(raw_str)

@@ -124,7 +124,7 @@ impl Player {
     }
 
     pub fn isvalid(&self) -> bool {
-        self.playertype.is_some_and(|x| x >= 2 && x <= 5)
+        self.playertype.is_some_and(|x| (2..=5).contains(&x))
     }
 }
 

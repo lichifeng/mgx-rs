@@ -8,12 +8,12 @@ use std::time::UNIX_EPOCH;
 /// Parse a recorded game file into a `Record` and `Parser`. Game info can be accessed from `Record`
 pub fn from_file(file: &str) -> Result<(Record, Parser<Vec<u8>>)> {
     let path = Path::new(file);
-    let mut file = File::open(&path)?;
+    let mut file = File::open(path)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
 
     // Get file metadata
-    let metadata = fs::metadata(&path)?;
+    let metadata = fs::metadata(path)?;
     let filename = path.file_name()
         .ok_or_else(|| anyhow!("Failed to get file name"))?
         .to_str()

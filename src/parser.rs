@@ -70,7 +70,7 @@ impl<T: AsRef<[u8]>> Parser<T> {
 
     /// Try to extract info from the recorded game.   
     /// Parsing may not be complete. Check `None` for fields when using `Record`.
-    pub fn parse_to(self: &mut Self, r: &mut Record) -> Result<&mut Self> {
+    pub fn parse_to(&mut self, r: &mut Record) -> Result<&mut Self> {
         r.md5 = Some(self.md5.clone());
 
         let h = &mut self.header;
@@ -220,7 +220,7 @@ impl<T: AsRef<[u8]>> Parser<T> {
         h.mov(1);
         let num_triggers = val!(h.get_i32());
         for _ in 0..num_triggers {
-            h.mov(4 + (2 * 1) + (3 * 4));
+            h.mov(18); // 4 + (2 * 1) + (3 * 4)
             let description_len = val!(h.get_i32());
             if description_len > 0 {
                 h.mov(description_len as isize);
@@ -379,7 +379,7 @@ impl<T: AsRef<[u8]>> Parser<T> {
                 || r.players[i].index.is_none()
                 || r.players[i]
                     .index
-                    .is_some_and(|idx| idx < 0 || idx > 8 || r.debug.playerinitpos_by_idx[idx as usize].is_some())
+                    .is_some_and(|idx| !(0..=8).contains(&idx) || r.debug.playerinitpos_by_idx[idx as usize].is_some())
             {
                 continue;
             }
@@ -401,7 +401,7 @@ impl<T: AsRef<[u8]>> Parser<T> {
         }
 
         // Analyze diplomacy
-        let mut playerpos = r.debug.playerinitpos_by_idx.clone();
+        let mut playerpos = r.debug.playerinitpos_by_idx;
         let totalplayers = val!(r.totalplayers) as usize;
         for i in 1..9 {
             if r.players[i].index.is_none() {
@@ -413,7 +413,8 @@ impl<T: AsRef<[u8]>> Parser<T> {
                 let mut team_members = vec![idx as i32];
                 let pos_my_diplomacy = val!(playerpos[idx]) - (5 + 36);
                 let pos_diplomacy = pos_my_diplomacy - totalplayers; // first one is GAIA
-                                                                     // println!("  my slot: {}, my idx: {}, totalplayers: {}", i, idx, totalplayers);
+                // println!("  my slot: {}, my idx: {}, totalplayers: {}", i, idx, totalplayers);
+                #[allow(clippy::needless_range_loop)]
                 for j in (idx + 1)..totalplayers {
                     // print!("   checking with idx: {}", j);
                     if playerpos[j].is_none() {
